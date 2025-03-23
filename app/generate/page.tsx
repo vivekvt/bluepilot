@@ -28,6 +28,17 @@ import { apiClient } from '@/src/utils/apiClient';
 import { FileItem, Step, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
+import Preview from '@/components/preview';
+
+interface LLMPrompt {
+  role: PromptRole;
+  text: string;
+}
+
+enum PromptRole {
+  User = 'user',
+  Assistant = 'assistant',
+}
 
 export default function GeneratePage() {
   const webContainer = useWebContainer();
@@ -36,12 +47,13 @@ export default function GeneratePage() {
 
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [llmMessages, setLlmMessages] = useState<LLMPrompt[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
-  const [messages, setMessages] = useState('');
+  const [newMessage, setNewMessage] = useState('');
 
-  const checkTemplate = async () => {
+  const init = async () => {
     try {
       if (isGenerating) return;
       setIsGenerating(true);
@@ -51,32 +63,42 @@ export default function GeneratePage() {
       }>('/api/template', {
         prompt: promptParam,
       });
+
       const { prompts, uiPrompts } = response.data;
+
       if (!(prompts?.length > 0)) {
         throw new Error('Give a valid prompt');
       }
+
       const newSteps = uiPrompts?.map((p) => parseXml(p)).flat() || [];
       setSteps(newSteps);
-      startChat(prompts);
+
+      const newLlmPrompts = [...prompts, promptParam].map((message) => ({
+        role: PromptRole.User,
+        text: message,
+      }));
       setIsGenerating(false);
+      startChat(newLlmPrompts);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
     }
   };
 
-  const startChat = async (prompts: string[]) => {
+  const startChat = async (newLlmPrompts: LLMPrompt[]) => {
     try {
       console.log('startChat');
       if (isGenerating) return;
       setIsGenerating(true);
       const response = await apiClient.post('/api/chat', {
-        messages: [...prompts, promptParam],
+        messages: newLlmPrompts,
       });
-      const answer = response?.data?.answer;
-      const newSteps = parseXml(answer);
-      console.log({ newSteps });
+      const newSteps = parseXml(response?.data?.answer);
       setSteps((steps) => [...steps, ...newSteps]);
+      setLlmMessages([
+        ...newLlmPrompts,
+        { role: PromptRole.Assistant, text: response?.data?.answer },
+      ]);
       setIsGenerating(false);
     } catch (error: any) {
       setIsGenerating(false);
@@ -85,7 +107,8 @@ export default function GeneratePage() {
   };
 
   useEffect(() => {
-    checkTemplate();
+    if (!promptParam) return;
+    init();
   }, [promptParam]);
 
   useEffect(() => {
@@ -158,13 +181,77 @@ export default function GeneratePage() {
     }
   }, [steps, files]);
 
+  useEffect(() => {
+    const createMountStructure = (files: FileItem[]): Record<string, any> => {
+      const mountStructure: Record<string, any> = {};
+
+      const processFile = (file: FileItem, isRootFolder: boolean) => {
+        if (file.type === 'folder') {
+          // For folders, create a directory entry
+          mountStructure[file.name] = {
+            directory: file.children
+              ? Object.fromEntries(
+                  file.children.map((child) => [
+                    child.name,
+                    processFile(child, false),
+                  ])
+                )
+              : {},
+          };
+        } else if (file.type === 'file') {
+          if (isRootFolder) {
+            mountStructure[file.name] = {
+              file: {
+                contents: file.content || '',
+              },
+            };
+          } else {
+            // For files, create a file entry with contents
+            return {
+              file: {
+                contents: file.content || '',
+              },
+            };
+          }
+        }
+
+        return mountStructure[file.name];
+      };
+
+      // Process each top-level file/folder
+      files.forEach((file) => processFile(file, true));
+
+      return mountStructure;
+    };
+
+    const mountStructure = createMountStructure(files);
+
+    // Mount the structure if WebContainer is available
+    console.log({ mountStructure });
+    webContainer
+      ?.mount(mountStructure)
+      .then(() => {
+        console.log('Files Mounted');
+      })
+      .catch((error) => {
+        console.error('Error mounting', error);
+      });
+  }, [files, webContainer]);
+
   const handleSendMessage = async () => {
     try {
       if (isGenerating) return;
       setIsGenerating(true);
-      startChat([messages]);
-      setMessages('');
+      const newLlmPrompt = [
+        ...llmMessages,
+        {
+          role: PromptRole.User,
+          text: newMessage,
+        },
+      ];
+      setNewMessage('');
       setIsGenerating(false);
+      startChat(newLlmPrompt);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -297,8 +384,8 @@ export default function GeneratePage() {
             >
               <input
                 type="text"
-                value={messages}
-                onChange={(e) => setMessages(e.target.value)}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
                 placeholder={
                   isGenerating
                     ? 'Generation in progress...'
@@ -428,8 +515,9 @@ export default function GeneratePage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full w-full">
+              <div className="h-full w-full ">
                 {/* Preview */}
+                {webContainer && <Preview webContainer={webContainer} />}
                 {/* <iframe
                   srcDoc={combinedCode}
                   title="Preview"

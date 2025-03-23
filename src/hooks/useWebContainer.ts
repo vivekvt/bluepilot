@@ -7,6 +7,7 @@ export const useWebContainer = () => {
 
   // Call only once
   useEffect(() => {
+    console.log('useWebContainer');
     const bootWebContainer = async () => {
       const instance = await WebContainer.boot();
       setWebcontainerInstance(instance);
