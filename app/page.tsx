@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { appConfig } from '@/src/config';
+import { ShineBorder } from '@/src/components/magicui/shine-border';
+import { Meteors } from '@/src/components/magicui/meteors';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
@@ -20,7 +22,8 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
+    <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <Meteors number={50} />
       <header className="container flex items-center justify-between py-6">
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
@@ -54,7 +57,8 @@ export default function LandingPage() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="w-full max-w-2xl"
         >
-          <div className="flex flex-col md:flex-row gap-2 p-2 border rounded-lg bg-card shadow-sm">
+          <div className="relative flex flex-col md:flex-row gap-2 p-2 border rounded-lg bg-card shadow-sm">
+            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
             <Input
               placeholder="Describe the website you want to create..."
               value={prompt}

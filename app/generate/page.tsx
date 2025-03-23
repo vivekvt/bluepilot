@@ -19,6 +19,8 @@ import {
   Download,
   ArrowRight,
   Loader2,
+  Plus,
+  TerminalSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Editor, getLanguageForFile } from '@/components/editor';
@@ -29,6 +31,9 @@ import { FileItem, Step, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
 import Preview from '@/components/preview';
+import { appConfig } from '@/src/config';
+import { ShineBorder } from '@/src/components/magicui/shine-border';
+import ShineBorderDemo from '@/components/demoCard';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -86,24 +91,24 @@ export default function GeneratePage() {
   };
 
   const startChat = async (newLlmPrompts: LLMPrompt[]) => {
-    try {
-      console.log('startChat');
-      if (isGenerating) return;
-      setIsGenerating(true);
-      const response = await apiClient.post('/api/chat', {
-        messages: newLlmPrompts,
-      });
-      const newSteps = parseXml(response?.data?.answer);
-      setSteps((steps) => [...steps, ...newSteps]);
-      setLlmMessages([
-        ...newLlmPrompts,
-        { role: PromptRole.Assistant, text: response?.data?.answer },
-      ]);
-      setIsGenerating(false);
-    } catch (error: any) {
-      setIsGenerating(false);
-      alert(`Error: ${error.message}`);
-    }
+    // try {
+    //   console.log('startChat');
+    //   if (isGenerating) return;
+    //   setIsGenerating(true);
+    //   const response = await apiClient.post('/api/chat', {
+    //     messages: newLlmPrompts,
+    //   });
+    //   const newSteps = parseXml(response?.data?.answer);
+    //   setSteps((steps) => [...steps, ...newSteps]);
+    //   setLlmMessages([
+    //     ...newLlmPrompts,
+    //     { role: PromptRole.Assistant, text: response?.data?.answer },
+    //   ]);
+    //   setIsGenerating(false);
+    // } catch (error: any) {
+    //   setIsGenerating(false);
+    //   alert(`Error: ${error.message}`);
+    // }
   };
 
   useEffect(() => {
@@ -261,7 +266,7 @@ export default function GeneratePage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background z-10">
+      <header className="dborder-b bg-background z-10">
         <div className="flex items-center h-14 px-4">
           <div className="flex items-center gap-2">
             <Link href="/">
@@ -269,7 +274,7 @@ export default function GeneratePage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <h1 className="text-lg font-semibold">WebGen</h1>
+            <h1 className="text-lg font-semibold">{appConfig.title}</h1>
             <div className="h-4 w-px bg-border mx-2"></div>
             <span className="text-sm text-muted-foreground">
               Generating Website
@@ -295,7 +300,7 @@ export default function GeneratePage() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left side - Chat */}
-        <div className="w-96 flex flex-col border-l bg-muted/10">
+        <div className="flex flex-col border-no bg-muted/10">
           {/* Chat header */}
           {/* <div className="border-b p-4">
             <h2 className="font-medium">Generation Progress</h2>
@@ -351,37 +356,18 @@ export default function GeneratePage() {
                   </div>
                 );
               })}
-              {/* {messages.map((message, index) => {
-                // if (message.role === 'system') return null;
-                const isStep = isCompletionStep(message.content);
-                return (
-                  <div
-                    key={index}
-                    className={cn(
-                      'p-3 rounded-lg flex items-start gap-2',
-                      isStep
-                        ? 'bg-green-500/10 text-foreground border border-green-500/20'
-                        : 'bg-primary/10 text-primary'
-                    )}
-                  >
-                    {isStep && (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    )}
-                    <span className="text-sm">{message.content}</span>
-                  </div>
-                );
-              })} */}
             </div>
           </div>
 
           {/* Chat input - disabled during generation */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-no">
             <div
               className={cn(
-                'flex items-center gap-2 p-2 rounded-md border bg-background'
-                // isGenerating ? 'opacity-50' : ''
+                'relative flex items-center gap-2 p-2 rounded-md border bg-background',
+                isGenerating ? 'opacity-50' : ''
               )}
             >
+              <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
               <input
                 type="text"
                 value={newMessage}
@@ -411,121 +397,152 @@ export default function GeneratePage() {
         </div>
 
         {/* Right side - Code and Preview */}
-        <div className="flex-1 flex flex-col overflow-hidden border-r">
-          {/* Tabs for Code and Preview */}
-          <div className="border-b bg-background">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <div className="flex h-10 items-center px-4">
-                <TabsList className="h-9 p-0 bg-transparent">
-                  <TabsTrigger
-                    value="code"
-                    className={cn(
-                      'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
-                      activeTab === 'code'
-                        ? 'border-primary'
-                        : 'border-transparent'
-                    )}
-                  >
-                    <Code className="h-4 w-4 mr-2" />
-                    Code
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="preview"
-                    className={cn(
-                      'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
-                      activeTab === 'preview'
-                        ? 'border-primary'
-                        : 'border-transparent'
-                    )}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Preview
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-            </Tabs>
-          </div>
+        <div className="flex-1 flex flex-col overflow-hidden pr-2 pb-2">
+          {/* <ShineBorderDemo /> */}
+          <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
+            {/* <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} /> */}
+            {/* Tabs for Code and Preview */}
+            <div className="border-b bg-background">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <div className="flex h-10 items-center px-4">
+                  <TabsList className="h-9 p-0 bg-transparent">
+                    <TabsTrigger
+                      value="code"
+                      className={cn(
+                        'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
+                        activeTab === 'code'
+                          ? 'border-primary'
+                          : 'border-transparent'
+                      )}
+                    >
+                      <Code className="h-4 w-4 mr-2" />
+                      Code
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="preview"
+                      className={cn(
+                        'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
+                        activeTab === 'preview'
+                          ? 'border-primary'
+                          : 'border-transparent'
+                      )}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </Tabs>
+            </div>
 
-          {/* Code Editor or Preview */}
-          <div className="flex-1 overflow-hidden">
-            {activeTab === 'code' ? (
-              <div className="flex h-full">
-                {/* File explorer */}
-                <div className="w-64 border-r overflow-auto bg-muted/30">
-                  <div className="p-2">
-                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
-                      FILES
+            {/* Code Editor or Preview */}
+            <div className="flex-1 overflow-hidden">
+              {activeTab === 'code' ? (
+                <div className="flex h-full">
+                  {/* File explorer */}
+                  <div className="w-50 border-r overflow-auto bg-muted/30">
+                    <div className="p-2">
+                      <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
+                        FILES
+                      </div>
+                      <div>
+                        {files?.map((file) => (
+                          <FileTree
+                            key={file.path}
+                            file={file}
+                            onFileClick={(file) => {
+                              console.log(file);
+                              setSelectedFile(file);
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <div className="mt-1">
-                      {files?.map((file) => (
-                        <FileTree
-                          key={file.path}
-                          file={file}
-                          onFileClick={(file) => {
-                            console.log(file);
-                            setSelectedFile(file);
+                  </div>
+
+                  {/* Code editor */}
+                  <div className="flex-1 overflow-hidden relative">
+                    <div className="absolute inset-0">
+                      <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b">
+                        <span>{selectedFile?.path}</span>
+                      </div>
+                      <div className="h-[calc(100%-25px)]">
+                        <Editor
+                          value={selectedFile?.content || ''}
+                          language={getLanguageForFile(
+                            selectedFile?.path || ''
+                          )}
+                          onChange={(value) => {
+                            // TODO
+                            // Write code to update file in both selctedFile and files
+
+                            // Update selectedFile
+                            setSelectedFile((file) => {
+                              if (!file) return null;
+                              return {
+                                ...file,
+                                content: value,
+                              };
+                            });
+                            setFiles((files) => {
+                              return files.map((file) => {
+                                if (file.path === selectedFile?.path) {
+                                  return {
+                                    ...file,
+                                    content: value,
+                                  };
+                                }
+                                return file;
+                              });
+                            });
                           }}
                         />
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Code editor */}
-                <div className="flex-1 overflow-hidden relative">
-                  <div className="absolute inset-0">
-                    <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b">
-                      <span>{selectedFile?.path}</span>
-                    </div>
-                    <div className="h-[calc(100%-25px)]">
-                      <Editor
-                        value={selectedFile?.content || ''}
-                        language={getLanguageForFile(selectedFile?.path || '')}
-                        onChange={(value) => {
-                          // TODO
-                          // Write code to update file in both selctedFile and files
-
-                          // Update selectedFile
-                          setSelectedFile((file) => {
-                            if (!file) return null;
-                            return {
-                              ...file,
-                              content: value,
-                            };
-                          });
-                          setFiles((files) => {
-                            return files.map((file) => {
-                              if (file.path === selectedFile?.path) {
-                                return {
-                                  ...file,
-                                  content: value,
-                                };
-                              }
-                              return file;
-                            });
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-full w-full ">
-                {/* Preview */}
-                {webContainer && <Preview webContainer={webContainer} />}
-                {/* <iframe
+              ) : (
+                <div className="h-full w-full ">
+                  {/* Preview */}
+                  {webContainer && <Preview webContainer={webContainer} />}
+                  {/* <iframe
                   srcDoc={combinedCode}
                   title="Preview"
                   className="w-full h-full border-0"
                   sandbox="allow-scripts"
                 /> */}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t bg-background">
+              <Tabs
+                value={activeTab}
+                // onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <div className="flex h-10 items-center px-4">
+                  <TabsList className="h-9 p-0 bg-transparent">
+                    <TabsTrigger
+                      value="terminal"
+                      className={cn(
+                        'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
+                        activeTab === 'terminal'
+                          ? 'border-primary'
+                          : 'border-transparent'
+                      )}
+                    >
+                      <TerminalSquare className="h-4 w-4 mr-2" />
+                      Terminal
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </Tabs>
+            </div>
           </div>
         </div>
       </div>
@@ -543,7 +560,7 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
 
   if (file.type === 'folder') {
     return (
-      <div key={file.path} className="ml-0">
+      <div key={file.path}>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-muted"
@@ -554,7 +571,7 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
           )}
           <Folder className="h-4 w-4 flex-shrink-0" />
-          <span className="truncate">{file.name}</span>
+          <span className="truncate text-xs">{file.name}</span>
         </button>
         {isExpanded && (
           <div className="ml-4 pl-2 border-l border-border/50 mt-1">
@@ -575,10 +592,10 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
     <button
       key={file.path}
       onClick={() => onFileClick(file)}
-      className="ml-4 w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-muted"
+      className="ml-0 w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-muted"
     >
       <FileCode className="h-4 w-4 flex-shrink-0" />
-      <span className="truncate">{file.name}</span>
+      <span className="truncate text-xs">{file.name}</span>
     </button>
   );
 }
