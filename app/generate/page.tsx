@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,8 @@ export default function GeneratePage() {
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
   const [newMessage, setNewMessage] = useState('');
+  const [isProcessingSteps, setIsProcessingSteps] = useState(false);
+  const filesRef = useRef<FileItem[]>([]);
 
   const init = async () => {
     try {
@@ -115,73 +117,163 @@ export default function GeneratePage() {
   };
 
   useEffect(() => {
-    let originalFiles = [...files];
-    let updateHappened = false;
-    steps
-      .filter(({ status }) => status === StepStatus.Pending)
-      .map((step) => {
-        updateHappened = true;
-        if (step?.type === StepType.File) {
-          let parsedPath = step.path?.split('/') ?? []; // ["src", "components", "App.tsx"]
-          let currentFileStructure = [...originalFiles]; // {}
-          let finalAnswerRef = currentFileStructure;
+    filesRef.current = files;
+  }, [files]);
 
-          let currentFolder = '';
-          while (parsedPath.length) {
-            currentFolder = `${currentFolder}/${parsedPath[0]}`;
-            let currentFolderName = parsedPath[0];
-            parsedPath = parsedPath.slice(1);
-
-            if (!parsedPath.length) {
-              // final file
-              let file = currentFileStructure.find(
-                (x) => x.path === currentFolder
-              );
-              if (!file) {
-                currentFileStructure.push({
-                  name: currentFolderName,
-                  type: 'file',
-                  path: currentFolder,
-                  content: step.code,
-                });
-              } else {
-                file.content = step.code;
-              }
-            } else {
-              /// in a folder
-              let folder = currentFileStructure.find(
-                (x) => x.path === currentFolder
-              );
-              if (!folder) {
-                // create the folder
-                currentFileStructure.push({
-                  name: currentFolderName,
-                  type: 'folder',
-                  path: currentFolder,
-                  children: [],
-                });
-              }
-
-              currentFileStructure = currentFileStructure.find(
-                (x) => x.path === currentFolder
-              )!.children!;
-            }
-          }
-          originalFiles = finalAnswerRef;
-        }
-      });
-
-    if (updateHappened) {
-      setFiles(originalFiles);
-      setSteps((steps) =>
-        steps.map((s: Step) => {
-          return {
-            ...s,
-            status: StepStatus.Completed,
-          };
-        })
+  // Function to process a single step
+  const processStep = async (step: Step): Promise<boolean> => {
+    try {
+      // Mark step as in progress
+      setSteps((prevSteps) =>
+        prevSteps.map((s) =>
+          s.id === step.id ? { ...s, status: StepStatus.InProgress } : s
+        )
       );
+
+      if (step.type === StepType.File) {
+        // Process file creation/update
+        let parsedPath = step.path?.split('/').filter(Boolean) ?? [];
+        let currentFileStructure = [...filesRef.current];
+        let finalAnswerRef = currentFileStructure;
+
+        let currentFolder = '';
+        while (parsedPath.length) {
+          currentFolder = `${currentFolder}/${parsedPath[0]}`;
+          let currentFolderName = parsedPath[0];
+          parsedPath = parsedPath.slice(1);
+
+          if (!parsedPath.length) {
+            // final file
+            let file = currentFileStructure.find(
+              (x) => x.path === currentFolder
+            );
+            if (!file) {
+              currentFileStructure.push({
+                name: currentFolderName,
+                type: 'file',
+                path: currentFolder,
+                content: step.code,
+              });
+            } else {
+              file.content = step.code;
+            }
+          } else {
+            /// in a folder
+            let folder = currentFileStructure.find(
+              (x) => x.path === currentFolder
+            );
+            if (!folder) {
+              // create the folder
+              currentFileStructure.push({
+                name: currentFolderName,
+                type: 'folder',
+                path: currentFolder,
+                children: [],
+              });
+            }
+
+            currentFileStructure = currentFileStructure.find(
+              (x) => x.path === currentFolder
+            )!.children!;
+          }
+        }
+        setFiles(finalAnswerRef);
+
+        // Mount the files to WebContainer
+        if (webContainer) {
+          const mountStructure = createMountStructure(finalAnswerRef);
+          await webContainer.mount(mountStructure);
+          console.log(`File mounted: ${step.path}`);
+        }
+      } else if (step.type === StepType.Shell) {
+        // Execute shell command
+        if (!webContainer) {
+          console.error('WebContainer not available for shell command');
+          return false;
+        }
+
+        // Parse the command string
+        const commandStr = step.code?.trim() || '';
+        const commandParts = commandStr.split(/\s+/);
+
+        if (commandParts.length < 1) {
+          console.error('Invalid shell command');
+          return false;
+        }
+
+        const command = commandParts[0];
+        const args = commandParts.slice(1);
+
+        console.log(`Running command: ${command} ${args.join(' ')}`);
+
+        // Execute command
+        const process = await webContainer.spawn(command, args);
+        const exitCode = await process.exit;
+
+        if (exitCode !== 0) {
+          console.error(`Command failed with exit code ${exitCode}`);
+          return false;
+        }
+      } else if (step.type === StepType.Title) {
+        // Title step - just mark it as completed
+        // No specific action needed
+      }
+
+      // Mark step as completed
+      setSteps((prevSteps) =>
+        prevSteps.map((s) =>
+          s.id === step.id ? { ...s, status: StepStatus.Completed } : s
+        )
+      );
+
+      return true;
+    } catch (error) {
+      console.error(`Error processing step ${step.id}:`, error);
+
+      // Mark step as failed
+      setSteps((prevSteps) =>
+        prevSteps.map((s) =>
+          s.id === step.id ? { ...s, status: StepStatus.Failed } : s
+        )
+      );
+
+      return false;
     }
+  };
+
+  // Process steps sequentially
+  const processSteps = async () => {
+    if (isProcessingSteps || !webContainer) return;
+
+    setIsProcessingSteps(true);
+
+    const pendingSteps = steps.filter(
+      (step) => step.status === StepStatus.Pending
+    );
+
+    for (const step of pendingSteps) {
+      const success = await processStep(step);
+      if (!success) {
+        break;
+      }
+    }
+
+    setIsProcessingSteps(false);
+  };
+
+  useEffect(() => {
+    if (
+      webContainer &&
+      steps.some((step) => step.status === StepStatus.Pending)
+    ) {
+      processSteps();
+    }
+  }, [steps, webContainer]);
+
+  // Replace the existing useEffect that processes steps
+  useEffect(() => {
+    // This replaces the previous file processing effect
+    // Now the processing is handled by processSteps function
   }, [steps, files]);
 
   const createMountStructure = (files: FileItem[]): Record<string, any> => {
@@ -221,21 +313,6 @@ export default function GeneratePage() {
 
     return mountStructure;
   };
-
-  useEffect(() => {
-    const mountStructure = createMountStructure(files);
-
-    // Mount the structure if WebContainer is available
-    console.log({ mountStructure });
-    webContainer
-      ?.mount(mountStructure)
-      .then(() => {
-        console.log('Files Mounted');
-      })
-      .catch((error) => {
-        console.error('Error mounting', error);
-      });
-  }, [files, webContainer]);
 
   const handleSendMessage = async () => {
     try {
@@ -573,45 +650,25 @@ interface PreviewProps {
 
 export function Preview({ webContainer }: PreviewProps) {
   const [url, setUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>('Waiting for server...');
 
-  // const run = async () => {
-  //   console.log('run');
-  //   const exitCode = await installDependencies();
-  //   if (exitCode !== 0) {
-  //     throw new Error('Installation failed');
-  //   }
-  //   startDevServer();
-  // };
+  useEffect(() => {
+    if (!webContainer) return;
 
-  // const installDependencies = async () => {
-  //   const installProcess = await webContainer.spawn('npm', ['install']);
+    // Listen for server-ready event
+    const listener = webContainer.on('server-ready', (port, serverUrl) => {
+      console.log(`Server ready on port ${port} at ${serverUrl}`);
+      setUrl(serverUrl);
+      setStatus('Server ready');
+    });
 
-  //   console.log('installProcess.exit', installProcess.exit);
-
-  //   // installProcess.output.pipeTo(
-  //   //   new WritableStream({
-  //   //     write(data) {
-  //   //       console.log(data);
-  //   //     },
-  //   //   })
-  //   // );
-  //   return installProcess.exit;
-  // };
-
-  // async function startDevServer() {
-  //   // Run `npm run start` to start the Express app
-  //   await webContainer.spawn('npm', ['run', 'dev']);
-
-  //   // Wait for `server-ready` event
-  //   webContainer.on('server-ready', (port, url) => {
-  //     console.log({ port, url });
-  //     setUrl(url);
-  //   });
-  // }
-
-  // useEffect(() => {
-  //   // run();
-  // }, []);
+    // return () => {
+    //   // Clean up listener when component unmounts
+    //   if (listener) {
+    //     listener.dispose();
+    //   }
+    // };
+  }, [webContainer]);
 
   return (
     <div className="w-full h-full">
@@ -623,7 +680,12 @@ export function Preview({ webContainer }: PreviewProps) {
           allowFullScreen
         />
       ) : (
-        <p>Loading...</p>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">{status}</p>
+          </div>
+        </div>
       )}
     </div>
   );
