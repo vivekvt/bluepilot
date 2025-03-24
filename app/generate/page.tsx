@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,13 @@ import { Editor, getLanguageForFile } from '@/components/editor';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { apiClient } from '@/src/utils/apiClient';
-import { FileItem, Step, StepStatus, StepType } from '@/types';
+import {
+  DirectoryNode,
+  FileNode,
+  FileSystemTree,
+  SymlinkNode,
+} from '@webcontainer/api';
+import { Step, StepStatus, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
 import { appConfig } from '@/src/config';
@@ -43,20 +49,44 @@ enum PromptRole {
   Assistant = 'assistant',
 }
 
+// File-related types based on WebContainer API
+interface FileEntry {
+  file: {
+    contents: string;
+  };
+}
+
+interface DirectoryEntry {
+  directory: Record<string, FileSystemEntryType>;
+}
+
+type FileSystemEntryType =
+  | FileEntry
+  | DirectoryEntry
+  | DirectoryNode
+  | FileNode
+  | SymlinkNode;
+
+// For selected file state
+interface SelectedFileInfo {
+  path: string;
+  content: string;
+}
+
 export default function GeneratePage() {
   const webContainer = useWebContainer();
   const searchParams = useSearchParams();
   const promptParam = searchParams?.get('prompt') || '';
 
-  const [files, setFiles] = useState<FileItem[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [files, setFiles] = useState<FileSystemTree>({});
+  const [selectedFile, setSelectedFile] = useState<SelectedFileInfo | null>(
+    null
+  );
   const [llmMessages, setLlmMessages] = useState<LLMPrompt[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
   const [newMessage, setNewMessage] = useState('');
-  const [isProcessingSteps, setIsProcessingSteps] = useState(false);
-  const filesRef = useRef<FileItem[]>([]);
 
   const init = async () => {
     try {
@@ -117,202 +147,73 @@ export default function GeneratePage() {
   };
 
   useEffect(() => {
-    filesRef.current = files;
-  }, [files]);
+    let updatedFiles = { ...files };
+    let updateHappened = false;
 
-  // Function to process a single step
-  const processStep = async (step: Step): Promise<boolean> => {
-    try {
-      // Mark step as in progress
-      setSteps((prevSteps) =>
-        prevSteps.map((s) =>
-          s.id === step.id ? { ...s, status: StepStatus.InProgress } : s
-        )
-      );
+    steps
+      .filter(({ status }) => status === StepStatus.Pending)
+      .forEach((step) => {
+        updateHappened = true;
+        if (step?.type === StepType.File && step.path) {
+          // Remove leading slash if present
+          const normPath = step.path.startsWith('/')
+            ? step.path.substring(1)
+            : step.path;
+          const pathParts = normPath.split('/');
 
-      if (step.type === StepType.File) {
-        // Process file creation/update
-        let parsedPath = step.path?.split('/').filter(Boolean) ?? [];
-        let currentFileStructure = [...filesRef.current];
-        let finalAnswerRef = currentFileStructure;
+          // Handle file creation/update
+          let current = updatedFiles;
+          const fileName = pathParts.pop() || '';
 
-        let currentFolder = '';
-        while (parsedPath.length) {
-          currentFolder = `${currentFolder}/${parsedPath[0]}`;
-          let currentFolderName = parsedPath[0];
-          parsedPath = parsedPath.slice(1);
-
-          if (!parsedPath.length) {
-            // final file
-            let file = currentFileStructure.find(
-              (x) => x.path === currentFolder
-            );
-            if (!file) {
-              currentFileStructure.push({
-                name: currentFolderName,
-                type: 'file',
-                path: currentFolder,
-                content: step.code,
-              });
-            } else {
-              file.content = step.code;
+          // Create directory structure if needed
+          for (let i = 0; i < pathParts.length; i++) {
+            const part = pathParts[i];
+            if (!current[part]) {
+              current[part] = { directory: {} };
+            } else if (!('directory' in current[part])) {
+              // Handle error - trying to use a file as a directory
+              console.error(`Cannot create path: ${part} exists as a file`);
+              return;
             }
-          } else {
-            /// in a folder
-            let folder = currentFileStructure.find(
-              (x) => x.path === currentFolder
-            );
-            if (!folder) {
-              // create the folder
-              currentFileStructure.push({
-                name: currentFolderName,
-                type: 'folder',
-                path: currentFolder,
-                children: [],
-              });
-            }
-
-            currentFileStructure = currentFileStructure.find(
-              (x) => x.path === currentFolder
-            )!.children!;
+            current = (current[part] as DirectoryEntry).directory;
           }
+
+          // Add or update the file
+          current[fileName] = {
+            file: {
+              contents: step.code || '',
+            },
+          };
         }
-        setFiles(finalAnswerRef);
+      });
 
-        // Mount the files to WebContainer
-        if (webContainer) {
-          const mountStructure = createMountStructure(finalAnswerRef);
-          await webContainer.mount(mountStructure);
-          console.log(`File mounted: ${step.path}`);
-        }
-      } else if (step.type === StepType.Shell) {
-        // Execute shell command
-        if (!webContainer) {
-          console.error('WebContainer not available for shell command');
-          return false;
-        }
-
-        // Parse the command string
-        const commandStr = step.code?.trim() || '';
-        const commandParts = commandStr.split(/\s+/);
-
-        if (commandParts.length < 1) {
-          console.error('Invalid shell command');
-          return false;
-        }
-
-        const command = commandParts[0];
-        const args = commandParts.slice(1);
-
-        console.log(`Running command: ${command} ${args.join(' ')}`);
-
-        // Execute command
-        const process = await webContainer.spawn(command, args);
-        const exitCode = await process.exit;
-
-        if (exitCode !== 0) {
-          console.error(`Command failed with exit code ${exitCode}`);
-          return false;
-        }
-      } else if (step.type === StepType.Title) {
-        // Title step - just mark it as completed
-        // No specific action needed
-      }
-
-      // Mark step as completed
-      setSteps((prevSteps) =>
-        prevSteps.map((s) =>
-          s.id === step.id ? { ...s, status: StepStatus.Completed } : s
-        )
+    if (updateHappened) {
+      setFiles(updatedFiles);
+      setSteps((steps) =>
+        steps.map((s: Step) => {
+          return {
+            ...s,
+            status: StepStatus.Completed,
+          };
+        })
       );
-
-      return true;
-    } catch (error) {
-      console.error(`Error processing step ${step.id}:`, error);
-
-      // Mark step as failed
-      setSteps((prevSteps) =>
-        prevSteps.map((s) =>
-          s.id === step.id ? { ...s, status: StepStatus.Failed } : s
-        )
-      );
-
-      return false;
     }
-  };
-
-  // Process steps sequentially
-  const processSteps = async () => {
-    if (isProcessingSteps || !webContainer) return;
-
-    setIsProcessingSteps(true);
-
-    const pendingSteps = steps.filter(
-      (step) => step.status === StepStatus.Pending
-    );
-
-    for (const step of pendingSteps) {
-      const success = await processStep(step);
-      if (!success) {
-        break;
-      }
-    }
-
-    setIsProcessingSteps(false);
-  };
-
-  useEffect(() => {
-    if (
-      webContainer &&
-      steps.some((step) => step.status === StepStatus.Pending)
-    ) {
-      processSteps();
-    }
-  }, [steps, webContainer]);
-
-  // Replace the existing useEffect that processes steps
-  useEffect(() => {
-    // This replaces the previous file processing effect
-    // Now the processing is handled by processSteps function
   }, [steps, files]);
 
-  const createMountStructure = (files: FileItem[]): Record<string, any> => {
-    const mountStructure: Record<string, any> = {};
-
-    const processFile = (file: FileItem): any => {
-      if (file.type === 'folder') {
-        // Create a directory entry
-        const directoryContents: Record<string, any> = {};
-
-        // Process children
-        if (file.children?.length) {
-          file.children.forEach((child) => {
-            directoryContents[child.name] = processFile(child);
-          });
-        }
-
-        return {
-          directory: directoryContents,
-        };
-      } else if (file.type === 'file') {
-        // Create a file entry with contents
-        return {
-          file: {
-            contents: file.content || '',
-          },
-        };
-      }
-
-      return null;
-    };
-
-    // Process each top-level file/folder
-    files.forEach((file) => {
-      mountStructure[file.name] = processFile(file);
-    });
-
-    return mountStructure;
-  };
+  useEffect(() => {
+    // Mount the files directly to WebContainer
+    if (webContainer && Object.keys(files).length > 0) {
+      console.log('Mounting files to WebContainer:', files);
+      webContainer
+        ?.mount(files)
+        .then(() => {
+          console.log('Files Mounted');
+        })
+        .catch((error) => {
+          console.error('Error mounting', error);
+        });
+    }
+  }, [files, webContainer]);
 
   const handleSendMessage = async () => {
     try {
@@ -517,13 +418,14 @@ export default function GeneratePage() {
                         FILES
                       </div>
                       <div>
-                        {files?.map((file) => (
+                        {Object.entries(files).map(([name, entry]) => (
                           <FileTree
-                            key={file.path}
-                            file={file}
-                            onFileClick={(file) => {
-                              console.log(file);
-                              setSelectedFile(file);
+                            key={name}
+                            name={name}
+                            path={name}
+                            entry={entry}
+                            onFileClick={(path, content) => {
+                              setSelectedFile({ path, content });
                             }}
                           />
                         ))}
@@ -536,18 +438,102 @@ export default function GeneratePage() {
                     <div className="absolute inset-0">
                       {selectedFile && (
                         <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b py-2">
-                          <span>{selectedFile?.path}</span>
+                          <span>{selectedFile.path}</span>
                         </div>
                       )}
                       {selectedFile && (
                         <div className="h-[calc(100%-25px)]">
                           <Editor
-                            value={selectedFile?.content || ''}
-                            language={getLanguageForFile(
-                              selectedFile?.path || ''
-                            )}
+                            value={selectedFile.content || ''}
+                            language={getLanguageForFile(selectedFile.path)}
                             onChange={(value) => {
-                              // TODO
+                              if (selectedFile) {
+                                // Update the file content in the WebContainer file structure
+                                setSelectedFile({
+                                  ...selectedFile,
+                                  content: value || '',
+                                });
+
+                                // Update the file in the files state
+                                const updateFileContent = (
+                                  path: string,
+                                  content: string,
+                                  filesObj: FileSystemTree
+                                ): FileSystemTree => {
+                                  const parts = path.split('/');
+                                  const fileName = parts.pop() || '';
+
+                                  if (parts.length === 0) {
+                                    // File is at the root level
+                                    return {
+                                      ...filesObj,
+                                      [fileName]: {
+                                        file: {
+                                          contents: content,
+                                        },
+                                      },
+                                    };
+                                  }
+
+                                  // File is nested in directories
+                                  const dirPath = parts.join('/');
+                                  const updateDir = (
+                                    currentPath: string[],
+                                    currentFiles: FileSystemTree
+                                  ): FileSystemTree => {
+                                    if (currentPath.length === 0) {
+                                      return currentFiles;
+                                    }
+
+                                    const currentPart = currentPath[0];
+                                    const remainingPath = currentPath.slice(1);
+
+                                    if (remainingPath.length === 0) {
+                                      // We're at the directory containing our file
+                                      const dirEntry = currentFiles[
+                                        currentPart
+                                      ] as DirectoryEntry;
+                                      return {
+                                        ...currentFiles,
+                                        [currentPart]: {
+                                          directory: {
+                                            ...dirEntry.directory,
+                                            [fileName]: {
+                                              file: {
+                                                contents: content,
+                                              },
+                                            },
+                                          },
+                                        },
+                                      };
+                                    }
+
+                                    // We need to go deeper
+                                    const dirEntry = currentFiles[
+                                      currentPart
+                                    ] as DirectoryEntry;
+                                    return {
+                                      ...currentFiles,
+                                      [currentPart]: {
+                                        directory: updateDir(
+                                          remainingPath,
+                                          dirEntry.directory
+                                        ),
+                                      },
+                                    };
+                                  };
+
+                                  return updateDir(parts, filesObj);
+                                };
+
+                                setFiles((previousFiles) =>
+                                  updateFileContent(
+                                    selectedFile.path,
+                                    value || '',
+                                    previousFiles
+                                  )
+                                );
+                              }
                             }}
                           />
                         </div>
@@ -595,16 +581,19 @@ export default function GeneratePage() {
 }
 
 interface FileTreeProps {
-  file: FileItem;
-  onFileClick: (file: FileItem) => void;
+  name: string;
+  path: string;
+  entry: FileSystemEntryType;
+  onFileClick: (path: string, content: string) => void;
 }
 
-export function FileTree({ file, onFileClick }: FileTreeProps) {
+export function FileTree({ name, path, entry, onFileClick }: FileTreeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isDirectory = 'directory' in entry;
 
-  if (file.type === 'folder') {
+  if (isDirectory) {
     return (
-      <div key={file.path}>
+      <div key={path}>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-muted"
@@ -615,17 +604,21 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
           )}
           <Folder className="h-4 w-4 flex-shrink-0" />
-          <span className="truncate text-xs">{file.name}</span>
+          <span className="truncate text-xs">{name}</span>
         </button>
         {isExpanded && (
           <div className="ml-4 pl-2 border-l border-border/50 mt-1">
-            {file?.children?.map((file2) => (
-              <FileTree
-                key={file2.path}
-                file={file2}
-                onFileClick={(f) => onFileClick(f)}
-              />
-            ))}
+            {Object.entries((entry as DirectoryEntry).directory).map(
+              ([childName, childEntry]) => (
+                <FileTree
+                  key={`${path}/${childName}`}
+                  name={childName}
+                  path={`${path}/${childName}`}
+                  entry={childEntry}
+                  onFileClick={onFileClick}
+                />
+              )
+            )}
           </div>
         )}
       </div>
@@ -634,12 +627,12 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
 
   return (
     <button
-      key={file.path}
-      onClick={() => onFileClick(file)}
+      key={path}
+      onClick={() => onFileClick(path, (entry as FileEntry).file.contents)}
       className="ml-0 w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left hover:bg-muted"
     >
       <FileCode className="h-4 w-4 flex-shrink-0" />
-      <span className="truncate text-xs">{file.name}</span>
+      <span className="truncate text-xs">{name}</span>
     </button>
   );
 }
@@ -650,25 +643,45 @@ interface PreviewProps {
 
 export function Preview({ webContainer }: PreviewProps) {
   const [url, setUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>('Waiting for server...');
+
+  const run = async () => {
+    console.log('run');
+    const exitCode = await installDependencies();
+    if (exitCode !== 0) {
+      throw new Error('Installation failed');
+    }
+    startDevServer();
+  };
+
+  const installDependencies = async () => {
+    const installProcess = await webContainer.spawn('npm', ['install']);
+
+    console.log('installProcess.exit', installProcess.exit);
+
+    // installProcess.output.pipeTo(
+    //   new WritableStream({
+    //     write(data) {
+    //       console.log(data);
+    //     },
+    //   })
+    // );
+    return installProcess.exit;
+  };
+
+  async function startDevServer() {
+    // Run `npm run start` to start the Express app
+    await webContainer.spawn('npm', ['run', 'dev']);
+
+    // Wait for `server-ready` event
+    webContainer.on('server-ready', (port, url) => {
+      console.log({ port, url });
+      setUrl(url);
+    });
+  }
 
   useEffect(() => {
-    if (!webContainer) return;
-
-    // Listen for server-ready event
-    const listener = webContainer.on('server-ready', (port, serverUrl) => {
-      console.log(`Server ready on port ${port} at ${serverUrl}`);
-      setUrl(serverUrl);
-      setStatus('Server ready');
-    });
-
-    // return () => {
-    //   // Clean up listener when component unmounts
-    //   if (listener) {
-    //     listener.dispose();
-    //   }
-    // };
-  }, [webContainer]);
+    run();
+  }, []);
 
   return (
     <div className="w-full h-full">
@@ -680,12 +693,7 @@ export function Preview({ webContainer }: PreviewProps) {
           allowFullScreen
         />
       ) : (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">{status}</p>
-          </div>
-        </div>
+        <p>Loading...</p>
       )}
     </div>
   );
