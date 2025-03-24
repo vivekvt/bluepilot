@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,7 +26,7 @@ import { Editor, getLanguageForFile } from '@/components/editor';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { apiClient } from '@/src/utils/apiClient';
-import { FileItem, Step, StepType } from '@/types';
+import { FileItem, Step, StepStatus, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
 import Preview from '@/components/preview';
@@ -90,37 +89,37 @@ export default function GeneratePage() {
     }
   };
 
-  const startChat = async (newLlmPrompts: LLMPrompt[]) => {
-    // try {
-    //   console.log('startChat');
-    //   if (isGenerating) return;
-    //   setIsGenerating(true);
-    //   const response = await apiClient.post('/api/chat', {
-    //     messages: newLlmPrompts,
-    //   });
-    //   const newSteps = parseXml(response?.data?.answer);
-    //   setSteps((steps) => [...steps, ...newSteps]);
-    //   setLlmMessages([
-    //     ...newLlmPrompts,
-    //     { role: PromptRole.Assistant, text: response?.data?.answer },
-    //   ]);
-    //   setIsGenerating(false);
-    // } catch (error: any) {
-    //   setIsGenerating(false);
-    //   alert(`Error: ${error.message}`);
-    // }
-  };
-
   useEffect(() => {
     if (!promptParam) return;
     init();
   }, [promptParam]);
 
+  const startChat = async (newLlmPrompts: LLMPrompt[]) => {
+    try {
+      console.log('startChat');
+      if (isGenerating) return;
+      setIsGenerating(true);
+      const response = await apiClient.post('/api/chat', {
+        messages: newLlmPrompts,
+      });
+      const newSteps = parseXml(response?.data?.answer);
+      setSteps((steps) => [...steps, ...newSteps]);
+      setLlmMessages([
+        ...newLlmPrompts,
+        { role: PromptRole.Assistant, text: response?.data?.answer },
+      ]);
+      setIsGenerating(false);
+    } catch (error: any) {
+      setIsGenerating(false);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
   useEffect(() => {
     let originalFiles = [...files];
     let updateHappened = false;
     steps
-      .filter(({ status }) => status === 'pending')
+      .filter(({ status }) => status === StepStatus.Pending)
       .map((step) => {
         updateHappened = true;
         if (step?.type === StepType.CreateFile) {
@@ -179,56 +178,52 @@ export default function GeneratePage() {
         steps.map((s: Step) => {
           return {
             ...s,
-            status: 'completed',
+            status: StepStatus.Completed,
           };
         })
       );
     }
   }, [steps, files]);
 
-  useEffect(() => {
-    const createMountStructure = (files: FileItem[]): Record<string, any> => {
-      const mountStructure: Record<string, any> = {};
+  const createMountStructure = (files: FileItem[]): Record<string, any> => {
+    const mountStructure: Record<string, any> = {};
 
-      const processFile = (file: FileItem, isRootFolder: boolean) => {
-        if (file.type === 'folder') {
-          // For folders, create a directory entry
-          mountStructure[file.name] = {
-            directory: file.children
-              ? Object.fromEntries(
-                  file.children.map((child) => [
-                    child.name,
-                    processFile(child, false),
-                  ])
-                )
-              : {},
-          };
-        } else if (file.type === 'file') {
-          if (isRootFolder) {
-            mountStructure[file.name] = {
-              file: {
-                contents: file.content || '',
-              },
-            };
-          } else {
-            // For files, create a file entry with contents
-            return {
-              file: {
-                contents: file.content || '',
-              },
-            };
-          }
+    const processFile = (file: FileItem): any => {
+      if (file.type === 'folder') {
+        // Create a directory entry
+        const directoryContents: Record<string, any> = {};
+
+        // Process children
+        if (file.children?.length) {
+          file.children.forEach((child) => {
+            directoryContents[child.name] = processFile(child);
+          });
         }
 
-        return mountStructure[file.name];
-      };
+        return {
+          directory: directoryContents,
+        };
+      } else if (file.type === 'file') {
+        // Create a file entry with contents
+        return {
+          file: {
+            contents: file.content || '',
+          },
+        };
+      }
 
-      // Process each top-level file/folder
-      files.forEach((file) => processFile(file, true));
-
-      return mountStructure;
+      return null;
     };
 
+    // Process each top-level file/folder
+    files.forEach((file) => {
+      mountStructure[file.name] = processFile(file);
+    });
+
+    return mountStructure;
+  };
+
+  useEffect(() => {
     const mountStructure = createMountStructure(files);
 
     // Mount the structure if WebContainer is available
@@ -300,7 +295,7 @@ export default function GeneratePage() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left side - Chat */}
-        <div className="flex flex-col border-no bg-muted/10">
+        <div className="w-1/4 flex flex-col border-no bg-muted/10">
           {/* Chat header */}
           {/* <div className="border-b p-4">
             <h2 className="font-medium">Generation Progress</h2>
@@ -332,22 +327,22 @@ export default function GeneratePage() {
                     key={index}
                     className={cn(
                       'p-1 m-0 rounded-lg flex items-start gap-2',
-                      step.status === 'completed'
+                      step.status === StepStatus.Completed
                         ? 'bg-green-500/10 text-green-700 border border-green-500/20'
-                        : step.status === 'pending'
+                        : step.status === StepStatus.Pending
                         ? 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/20'
-                        : step.status === 'in-progress'
+                        : step.status === StepStatus.InProgress
                         ? 'bg-blue-500/10 text-blue-700 border border-blue-500/20'
                         : 'bg-primary/10 text-primary'
                     )}
                   >
-                    {step.status === 'completed' && (
+                    {step.status === StepStatus.Completed && (
                       <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                     )}
-                    {step.status === 'pending' && (
+                    {step.status === StepStatus.Pending && (
                       <ChevronDown className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                     )}
-                    {step.status === 'in-progress' && (
+                    {step.status === StepStatus.InProgress && (
                       <Loader2 className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 animate-spin" />
                     )}
                     <span className="text-sm">
@@ -398,9 +393,7 @@ export default function GeneratePage() {
 
         {/* Right side - Code and Preview */}
         <div className="flex-1 flex flex-col overflow-hidden pr-2 pb-2">
-          {/* <ShineBorderDemo /> */}
           <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
-            {/* <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} /> */}
             {/* Tabs for Code and Preview */}
             <div className="border-b bg-background">
               <Tabs
@@ -445,7 +438,7 @@ export default function GeneratePage() {
                 <div className="flex h-full">
                   {/* File explorer */}
                   <div className="w-50 border-r overflow-auto bg-muted/30">
-                    <div className="p-2">
+                    <div className="p-1">
                       <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                         FILES
                       </div>
@@ -467,41 +460,24 @@ export default function GeneratePage() {
                   {/* Code editor */}
                   <div className="flex-1 overflow-hidden relative">
                     <div className="absolute inset-0">
-                      <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b">
-                        <span>{selectedFile?.path}</span>
-                      </div>
-                      <div className="h-[calc(100%-25px)]">
-                        <Editor
-                          value={selectedFile?.content || ''}
-                          language={getLanguageForFile(
-                            selectedFile?.path || ''
-                          )}
-                          onChange={(value) => {
-                            // TODO
-                            // Write code to update file in both selctedFile and files
-
-                            // Update selectedFile
-                            setSelectedFile((file) => {
-                              if (!file) return null;
-                              return {
-                                ...file,
-                                content: value,
-                              };
-                            });
-                            setFiles((files) => {
-                              return files.map((file) => {
-                                if (file.path === selectedFile?.path) {
-                                  return {
-                                    ...file,
-                                    content: value,
-                                  };
-                                }
-                                return file;
-                              });
-                            });
-                          }}
-                        />
-                      </div>
+                      {selectedFile && (
+                        <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b py-2">
+                          <span>{selectedFile?.path}</span>
+                        </div>
+                      )}
+                      {selectedFile && (
+                        <div className="h-[calc(100%-25px)]">
+                          <Editor
+                            value={selectedFile?.content || ''}
+                            language={getLanguageForFile(
+                              selectedFile?.path || ''
+                            )}
+                            onChange={(value) => {
+                              // TODO
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -509,12 +485,6 @@ export default function GeneratePage() {
                 <div className="h-full w-full ">
                   {/* Preview */}
                   {webContainer && <Preview webContainer={webContainer} />}
-                  {/* <iframe
-                  srcDoc={combinedCode}
-                  title="Preview"
-                  className="w-full h-full border-0"
-                  sandbox="allow-scripts"
-                /> */}
                 </div>
               )}
             </div>

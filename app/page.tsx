@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { appConfig } from '@/src/config';
 import { ShineBorder } from '@/src/components/magicui/shine-border';
 import { Meteors } from '@/src/components/magicui/meteors';
+import { NeonGradientCard } from '@/src/components/magicui/neon-gradient-card';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
@@ -23,10 +24,10 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <Meteors number={50} />
+      {/* <Meteors number={50} /> */}
       <header className="container flex items-center justify-between py-6">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" />
+          {/* <Sparkles className="h-6 w-6 text-primary" /> */}
           <h1 className="text-xl font-bold">{appConfig.title}</h1>
         </div>
         <nav className="flex items-center gap-2">
@@ -55,21 +56,25 @@ export default function LandingPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="w-full max-w-2xl"
+          className="w-full max-w-2xl "
         >
-          <div className="relative flex flex-col md:flex-row gap-2 p-2 border rounded-lg bg-card shadow-sm">
-            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
-            <Input
-              placeholder="Describe the website you want to create..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-            />
-            <Button onClick={handleGenerate} className="gap-2">
-              Generate <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <NeonGradientCard className="m-0 p-0">
+            <div className="p-3 bg-card rounded-3xl">
+              {/* <div className="relative flex flex-col md:flex-row gap-2 p-2 border rounded-lg bg-card shadow-sm"> */}
+              {/* <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} /> */}
+              <Input
+                placeholder="Describe the website you want to create..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+              />
+              <Button onClick={handleGenerate} className="gap-2 w-full mt-2">
+                Generate <ArrowRight className="h-4 w-4" />
+              </Button>
+              {/* </div> */}
+            </div>
+          </NeonGradientCard>
         </motion.div>
 
         <motion.div

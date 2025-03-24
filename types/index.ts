@@ -1,9 +1,16 @@
 export enum StepType {
-  CreateFile,
-  CreateFolder,
-  EditFile,
-  DeleteFile,
-  RunScript,
+  CreateFile = 'createFile',
+  CreateFolder = 'createFolder',
+  EditFile = 'editFile',
+  DeleteFile = 'deleteFile',
+  RunScript = 'runScript',
+}
+
+export enum StepStatus {
+  Pending = 'pending',
+  InProgress = 'inProgress',
+  Completed = 'completed',
+  Failed = 'failed',
 }
 
 export interface Step {
@@ -11,7 +18,7 @@ export interface Step {
   title: string;
   description: string;
   type: StepType;
-  status: 'pending' | 'in-progress' | 'completed';
+  status: StepStatus;
   code?: string;
   path?: string;
 }
