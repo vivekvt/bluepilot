@@ -1,4 +1,4 @@
-import { Step, StepType } from '@/types';
+import { Step, StepStatus, StepType } from '@/types';
 
 export function parseXml(response: string): Step[] {
   // Extract the XML content between <boltArtifact> tags
@@ -23,8 +23,8 @@ export function parseXml(response: string): Step[] {
     id: stepId++,
     title: artifactTitle,
     description: '',
-    type: StepType.CreateFolder,
-    status: 'pending',
+    type: StepType.Title,
+    status: StepStatus.Pending,
   });
 
   // Regular expression to find boltAction elements
@@ -41,8 +41,8 @@ export function parseXml(response: string): Step[] {
         id: stepId++,
         title: `Create ${filePath || 'file'}`,
         description: '',
-        type: StepType.CreateFile,
-        status: 'pending',
+        type: StepType.File,
+        status: StepStatus.Pending,
         code: content.trim(),
         path: filePath,
       });
@@ -52,8 +52,8 @@ export function parseXml(response: string): Step[] {
         id: stepId++,
         title: 'Run command',
         description: '',
-        type: StepType.RunScript,
-        status: 'pending',
+        type: StepType.Shell,
+        status: StepStatus.Pending,
         code: content.trim(),
       });
     }

@@ -29,10 +29,9 @@ import { apiClient } from '@/src/utils/apiClient';
 import { FileItem, Step, StepStatus, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
-import Preview from '@/components/preview';
 import { appConfig } from '@/src/config';
 import { ShineBorder } from '@/src/components/magicui/shine-border';
-import ShineBorderDemo from '@/components/demoCard';
+import { WebContainer } from '@webcontainer/api';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -122,7 +121,7 @@ export default function GeneratePage() {
       .filter(({ status }) => status === StepStatus.Pending)
       .map((step) => {
         updateHappened = true;
-        if (step?.type === StepType.CreateFile) {
+        if (step?.type === StepType.File) {
           let parsedPath = step.path?.split('/') ?? []; // ["src", "components", "App.tsx"]
           let currentFileStructure = [...originalFiles]; // {}
           let finalAnswerRef = currentFileStructure;
@@ -345,9 +344,7 @@ export default function GeneratePage() {
                     {step.status === StepStatus.InProgress && (
                       <Loader2 className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 animate-spin" />
                     )}
-                    <span className="text-sm">
-                      {step.title} {step.status}
-                    </span>
+                    <span className="text-sm">{step.title}</span>
                   </div>
                 );
               })}
@@ -567,5 +564,67 @@ export function FileTree({ file, onFileClick }: FileTreeProps) {
       <FileCode className="h-4 w-4 flex-shrink-0" />
       <span className="truncate text-xs">{file.name}</span>
     </button>
+  );
+}
+
+interface PreviewProps {
+  webContainer: WebContainer;
+}
+
+export function Preview({ webContainer }: PreviewProps) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  // const run = async () => {
+  //   console.log('run');
+  //   const exitCode = await installDependencies();
+  //   if (exitCode !== 0) {
+  //     throw new Error('Installation failed');
+  //   }
+  //   startDevServer();
+  // };
+
+  // const installDependencies = async () => {
+  //   const installProcess = await webContainer.spawn('npm', ['install']);
+
+  //   console.log('installProcess.exit', installProcess.exit);
+
+  //   // installProcess.output.pipeTo(
+  //   //   new WritableStream({
+  //   //     write(data) {
+  //   //       console.log(data);
+  //   //     },
+  //   //   })
+  //   // );
+  //   return installProcess.exit;
+  // };
+
+  // async function startDevServer() {
+  //   // Run `npm run start` to start the Express app
+  //   await webContainer.spawn('npm', ['run', 'dev']);
+
+  //   // Wait for `server-ready` event
+  //   webContainer.on('server-ready', (port, url) => {
+  //     console.log({ port, url });
+  //     setUrl(url);
+  //   });
+  // }
+
+  // useEffect(() => {
+  //   // run();
+  // }, []);
+
+  return (
+    <div className="w-full h-full">
+      {url ? (
+        <iframe
+          className="h-full w-full border-none m-0 p-0"
+          src={url}
+          frameBorder="0"
+          allowFullScreen
+        />
+      ) : (
+        <p>Loading...</p>
+      )}
+    </div>
   );
 }
