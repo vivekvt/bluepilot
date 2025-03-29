@@ -38,6 +38,12 @@ import { useWebContainer } from '@/src/hooks/useWebContainer';
 import { appConfig } from '@/src/config';
 import { ShineBorder } from '@/src/components/magicui/shine-border';
 import { WebContainer } from '@webcontainer/api';
+import { set } from 'date-fns';
+import {
+  AnimatedSpan,
+  Terminal,
+  TypingAnimation,
+} from '@/src/components/magicui/terminal';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -87,6 +93,15 @@ export default function GeneratePage() {
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
   const [newMessage, setNewMessage] = useState('');
+  const [url, setUrl] = useState('');
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [terminalOutput, setTerminalOutput] = useState<{
+    command: string;
+    output: string[];
+  }>({
+    command: '',
+    output: [],
+  });
 
   const init = async () => {
     try {
@@ -105,15 +120,15 @@ export default function GeneratePage() {
         throw new Error('Give a valid prompt');
       }
 
-      const newSteps = uiPrompts?.map((p) => parseXml(p)).flat() || [];
-      setSteps(newSteps);
+      const oldSteps = uiPrompts?.map((p) => parseXml(p)).flat() || [];
+      // setSteps(newSteps);
 
       const newLlmPrompts = [...prompts, promptParam].map((message) => ({
         role: PromptRole.User,
         text: message,
       }));
       setIsGenerating(false);
-      startChat(newLlmPrompts);
+      startChat(newLlmPrompts, oldSteps);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -125,7 +140,7 @@ export default function GeneratePage() {
     init();
   }, [promptParam]);
 
-  const startChat = async (newLlmPrompts: LLMPrompt[]) => {
+  const startChat = async (newLlmPrompts: LLMPrompt[], oldSteps?: Step[]) => {
     try {
       console.log('startChat');
       if (isGenerating) return;
@@ -133,8 +148,11 @@ export default function GeneratePage() {
       const response = await apiClient.post('/api/chat', {
         messages: newLlmPrompts,
       });
-      const newSteps = parseXml(response?.data?.answer);
-      setSteps((steps) => [...steps, ...newSteps]);
+      let newSteps = parseXml(response?.data?.answer);
+      if (oldSteps && oldSteps?.length > 0) {
+        newSteps = [...oldSteps, ...newSteps];
+      }
+      setSteps((previousSteps) => [...previousSteps, ...newSteps]);
       setLlmMessages([
         ...newLlmPrompts,
         { role: PromptRole.Assistant, text: response?.data?.answer },
@@ -147,73 +165,87 @@ export default function GeneratePage() {
   };
 
   useEffect(() => {
-    let updatedFiles = { ...files };
-    let updateHappened = false;
+    if (isGenerating || !webContainer) return;
+    setIsGenerating(true);
+    const processSteps = async () => {
+      try {
+        let updatedFiles = { ...files };
+        let updateHappened = false;
 
-    steps
-      .filter(({ status }) => status === StepStatus.Pending)
-      .forEach((step) => {
-        updateHappened = true;
-        if (step?.type === StepType.File && step.path) {
-          // Remove leading slash if present
-          const normPath = step.path.startsWith('/')
-            ? step.path.substring(1)
-            : step.path;
-          const pathParts = normPath.split('/');
+        const pendingSteps = steps.filter(
+          ({ status }) => status === StepStatus.Pending
+        );
 
-          // Handle file creation/update
-          let current = updatedFiles;
-          const fileName = pathParts.pop() || '';
+        for (let i = 0; i < pendingSteps.length; i++) {
+          const step = pendingSteps[i];
+          updateHappened = true;
+          if (step?.type === StepType.File && step.path) {
+            // Remove leading slash if present
+            const normPath = step.path.startsWith('/')
+              ? step.path.substring(1)
+              : step.path;
+            const pathParts = normPath.split('/');
 
-          // Create directory structure if needed
-          for (let i = 0; i < pathParts.length; i++) {
-            const part = pathParts[i];
-            if (!current[part]) {
-              current[part] = { directory: {} };
-            } else if (!('directory' in current[part])) {
-              // Handle error - trying to use a file as a directory
-              console.error(`Cannot create path: ${part} exists as a file`);
-              return;
+            // Handle file creation/update
+            let current = updatedFiles;
+            const fileName = pathParts.pop() || '';
+
+            // Create directory structure if needed
+            for (let i = 0; i < pathParts.length; i++) {
+              const part = pathParts[i];
+              if (!current[part]) {
+                current[part] = { directory: {} };
+              } else if (!('directory' in current[part])) {
+                // Handle error - trying to use a file as a directory
+                console.error(`Cannot create path: ${part} exists as a file`);
+                return;
+              }
+              current = (current[part] as DirectoryEntry).directory;
             }
-            current = (current[part] as DirectoryEntry).directory;
+
+            // Add or update the file
+            current[fileName] = {
+              file: {
+                contents: step.code || '',
+              },
+            };
+          }
+        }
+
+        if (updateHappened) {
+          setFiles(updatedFiles);
+          await webContainer?.mount(updatedFiles);
+          const pendingShellSteps = steps.filter(
+            (step) =>
+              step.status === StepStatus.Pending && step.type === StepType.Shell
+          );
+          console.log('pendingShellSteps', pendingShellSteps);
+          for (let i = 0; i < pendingShellSteps.length; i++) {
+            const step = pendingShellSteps[i];
+
+            if (step?.code) await npmInstallAndRun(step?.code, webContainer);
           }
 
-          // Add or update the file
-          current[fileName] = {
-            file: {
-              contents: step.code || '',
-            },
-          };
+          console.log('setsteps');
+          startDevServer();
+          setSteps((steps) =>
+            steps.map((s: Step) => {
+              return {
+                ...s,
+                status: StepStatus.Completed,
+              };
+            })
+          );
         }
-      });
-
-    if (updateHappened) {
-      setFiles(updatedFiles);
-      setSteps((steps) =>
-        steps.map((s: Step) => {
-          return {
-            ...s,
-            status: StepStatus.Completed,
-          };
-        })
-      );
-    }
-  }, [steps, files]);
-
-  useEffect(() => {
-    // Mount the files directly to WebContainer
-    if (webContainer && Object.keys(files).length > 0) {
-      console.log('Mounting files to WebContainer:', files);
-      webContainer
-        ?.mount(files)
-        .then(() => {
-          console.log('Files Mounted');
-        })
-        .catch((error) => {
-          console.error('Error mounting', error);
-        });
-    }
-  }, [files, webContainer]);
+        setIsGenerating(false);
+      } catch (error) {
+        console.error('Error processing steps:', error);
+        setIsGenerating(false);
+        return;
+      }
+    };
+    processSteps();
+  }, [steps]);
 
   const handleSendMessage = async () => {
     try {
@@ -234,6 +266,46 @@ export default function GeneratePage() {
       alert(`Error: ${error.message}`);
     }
   };
+
+  async function startDevServer() {
+    if (!webContainer) return;
+    if (url) {
+      setShowTerminal(false);
+      setActiveTab('preview');
+    } else {
+      setTerminalOutput((prev) => ({
+        ...prev,
+        command: 'npm run dev',
+      }));
+      setShowTerminal(true);
+      const spawnProcess = await webContainer.spawn('npm', ['run', 'dev']);
+      spawnProcess.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            setTerminalOutput((prev) => ({
+              ...prev,
+              output: [...prev.output, data],
+            }));
+            // console.log(data);
+            console.log(data);
+          },
+        })
+      );
+      // Wait for `server-ready` event
+      webContainer.on('server-ready', (port, url) => {
+        console.log({ port, url });
+        setUrl(url);
+        setShowTerminal(false);
+        setActiveTab('preview');
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (isGenerating && activeTab === 'preview') {
+      setActiveTab('code');
+    }
+  }, [isGenerating]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -369,6 +441,7 @@ export default function GeneratePage() {
         {/* Right side - Code and Preview */}
         <div className="flex-1 flex flex-col overflow-hidden pr-2 pb-2">
           <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
+            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
             {/* Tabs for Code and Preview */}
             <div className="border-b bg-background">
               <Tabs
@@ -544,20 +617,21 @@ export default function GeneratePage() {
               ) : (
                 <div className="h-full w-full ">
                   {/* Preview */}
-                  {webContainer && <Preview webContainer={webContainer} />}
+                  {webContainer && <Preview url={url} />}
                 </div>
               )}
             </div>
 
             <div className="border-t bg-background">
               <Tabs
-                value={activeTab}
-                // onValueChange={setActiveTab}
+                value={showTerminal ? 'terminal' : ''}
+                // onValueChange={() => setShowTerminal(!showTerminal)}
                 className="w-full"
               >
                 <div className="flex h-10 items-center px-4">
                   <TabsList className="h-9 p-0 bg-transparent">
                     <TabsTrigger
+                      onClick={() => setShowTerminal(!showTerminal)}
                       value="terminal"
                       className={cn(
                         'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
@@ -572,6 +646,20 @@ export default function GeneratePage() {
                   </TabsList>
                 </div>
               </Tabs>
+              {showTerminal && (
+                <Terminal className="h-40 w-full">
+                  {terminalOutput.command && (
+                    <TypingAnimation>
+                      {'&gt;' + terminalOutput.command}
+                    </TypingAnimation>
+                  )}
+                  {terminalOutput.output.map((line, index) => (
+                    <TypingAnimation key={index} delay={1000}>
+                      {line}
+                    </TypingAnimation>
+                  ))}
+                </Terminal>
+              )}
             </div>
           </div>
         </div>
@@ -637,27 +725,24 @@ export function FileTree({ name, path, entry, onFileClick }: FileTreeProps) {
   );
 }
 
-interface PreviewProps {
-  webContainer: WebContainer;
-}
+const npmInstallAndRun = async (code: string, webContainer: WebContainer) => {
+  const normalizedCode = code.replace(/&amp;&amp;/g, '&&');
+  const commands = normalizedCode.split('&&').map((cmd) => cmd.trim());
 
-export function Preview({ webContainer }: PreviewProps) {
-  const [url, setUrl] = useState<string | null>(null);
-
-  const run = async () => {
-    console.log('run');
-    const exitCode = await installDependencies();
+  for (let i = 0; i < commands.length; i++) {
+    const command = commands[i];
+    if (command === 'npm run dev') continue;
+    const parts = command.split(' ');
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    console.log(`Running command: ${cmd} ${args.join(' ')}`);
+    // await webContainer.spawn(cmd, args);
+    const exitCode = await spawnCommand(webContainer, cmd, args);
     if (exitCode !== 0) {
-      throw new Error('Installation failed');
+      throw new Error('spawnCommand failed');
     }
-    startDevServer();
-  };
-
-  const installDependencies = async () => {
-    const installProcess = await webContainer.spawn('npm', ['install']);
-
-    console.log('installProcess.exit', installProcess.exit);
-
+    // console.log({ exitCode });
+    // const installProcess = await webContainer?.spawn(cmd, args);
     // installProcess.output.pipeTo(
     //   new WritableStream({
     //     write(data) {
@@ -665,23 +750,77 @@ export function Preview({ webContainer }: PreviewProps) {
     //     },
     //   })
     // );
-    return installProcess.exit;
-  };
-
-  async function startDevServer() {
-    // Run `npm run start` to start the Express app
-    await webContainer.spawn('npm', ['run', 'dev']);
-
-    // Wait for `server-ready` event
-    webContainer.on('server-ready', (port, url) => {
-      console.log({ port, url });
-      setUrl(url);
-    });
   }
+};
 
-  useEffect(() => {
-    run();
-  }, []);
+const spawnCommand = async (
+  webContainer: WebContainer,
+  cmd: string,
+  args: string[]
+) => {
+  const installProcess = await webContainer.spawn(cmd, args);
+  // installProcess.output.pipeTo(
+  //   new WritableStream({
+  //     write(data) {
+  //       console.log(data);
+  //     },
+  //   })
+  // );
+  return installProcess.exit;
+};
+
+interface PreviewProps {
+  url: string;
+  // webContainer: WebContainer;
+}
+
+export function Preview({ url }: PreviewProps) {
+  // const [url, setUrl] = useState<string | null>(null);
+
+  // const run = async () => {
+  //   console.log('run');
+  //   const exitCode = await installDependencies();
+  //   if (exitCode !== 0) {
+  //     throw new Error('Installation failed');
+  //   }
+  //   startDevServer();
+  // };
+
+  // const installDependencies = async () => {
+  //   const installProcess = await webContainer.spawn('npm', ['install']);
+
+  //   console.log('installProcess.exit', installProcess.exit);
+
+  //   // installProcess.output.pipeTo(
+  //   //   new WritableStream({
+  //   //     write(data) {
+  //   //       console.log(data);
+  //   //     },
+  //   //   })
+  //   // );
+  //   return installProcess.exit;
+  // };
+
+  // async function startDevServer() {
+  //   // Run `npm run start` to start the Express app
+  //   await webContainer.spawn('npm', ['run', 'dev']);
+
+  //   // Wait for `server-ready` event
+  //   webContainer.on('server-ready', (port, url) => {
+  //     console.log({ port, url });
+  //     setUrl(url);
+  //   });
+  // }
+
+  // useEffect(() => {
+  //   startDevServer();
+  //   //   // Wait for `server-ready` event
+  //   // if (!webContainer || url) return;
+  //   // webContainer.on('server-ready', (port, url) => {
+  //   //   console.log({ port, url });
+  //   //   setUrl(url);
+  //   // });
+  // }, [webContainer]);
 
   return (
     <div className="w-full h-full">
