@@ -40,7 +40,7 @@ export function parseXml(response: string): Step[] {
       // File creation step
       steps.push({
         id: nanoid(),
-        title: `Create ${filePath || 'file'}`,
+        title: `Code File: ${filePath || 'file'}`,
         description: '',
         type: StepType.File,
         status: StepStatus.Pending,

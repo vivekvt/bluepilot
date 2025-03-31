@@ -336,10 +336,10 @@ export default function GeneratePage() {
               </Button>
             </Link>
             <h1 className="text-lg font-semibold">{appConfig.title}</h1>
-            <div className="h-4 w-px bg-border mx-2"></div>
+            {/* <div className="h-4 w-px bg-border mx-2"></div>
             <span className="text-sm text-muted-foreground">
               Generating Website
-            </span>
+            </span> */}
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -387,10 +387,6 @@ export default function GeneratePage() {
               </div>
               <div className="p-3 rounded-lg bg-muted/50 text-sm">
                 {promptParam || 'Create a modern website'}
-              </div>
-
-              <div className="text-xs font-medium text-muted-foreground mt-6 mb-2">
-                GENERATION LOG
               </div>
               {steps.map((step, index) => {
                 const isStep = true;
