@@ -45,6 +45,7 @@ import {
   TypingAnimation,
 } from '@/src/components/magicui/terminal';
 import { useDownload } from '@/src/hooks/useDownload';
+import { DeployButton } from '@/src/components/deploy-button';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -90,7 +91,7 @@ export default function GeneratePage() {
     null
   );
   const [llmMessages, setLlmMessages] = useState<LLMPrompt[]>([]);
-  const [isGenerating, setIsGenerating] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
   const [newMessage, setNewMessage] = useState('');
@@ -113,7 +114,7 @@ export default function GeneratePage() {
       const response = await apiClient.post<{
         basePrompts: LLMPrompt[];
         files: FileSystemTree;
-      }>('/api/template', {
+      }>('/api/project', {
         prompt: promptParam,
       });
 
@@ -151,7 +152,6 @@ export default function GeneratePage() {
 
   const startChat = async (newLlmPrompts: LLMPrompt[], oldSteps?: Step[]) => {
     try {
-      console.log('startChat');
       if (isGenerating) return;
       setIsGenerating(true);
       const response = await apiClient.post('/api/chat', {
@@ -353,12 +353,13 @@ export default function GeneratePage() {
               <Download className="h-4 w-4" />
               <span>Download</span>
             </Button>
-            <Button variant="ghost" size="icon">
+            <DeployButton projectFiles={files} />
+            {/* <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon">
               <MoreHorizontal className="h-5 w-5" />
-            </Button>
+            </Button> */}
           </div>
         </div>
       </header>
@@ -411,7 +412,7 @@ export default function GeneratePage() {
                       <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                     )}
                     {step.status === StepStatus.Pending && (
-                      <ChevronDown className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                      <Loader2 className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 animate-spin" />
                     )}
                     {step.status === StepStatus.InProgress && (
                       <Loader2 className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 animate-spin" />
@@ -427,11 +428,12 @@ export default function GeneratePage() {
           <div className="p-4 border-no">
             <div
               className={cn(
-                'relative flex items-center gap-2 p-2 rounded-md border bg-background',
-                isGenerating ? 'opacity-50' : ''
+                'relative flex items-center gap-2 p-2 rounded-md border bg-background'
               )}
             >
-              <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+              {isGenerating && (
+                <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+              )}
               <input
                 type="text"
                 value={newMessage}
@@ -463,7 +465,9 @@ export default function GeneratePage() {
         {/* Right side - Code and Preview */}
         <div className="flex-1 flex flex-col overflow-hidden pr-2 pb-2">
           <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
-            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+            {isGenerating && (
+              <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+            )}
             {/* Tabs for Code and Preview */}
             <div className="border-b bg-background">
               <Tabs
@@ -639,7 +643,16 @@ export default function GeneratePage() {
               ) : (
                 <div className="h-full w-full ">
                   {/* Preview */}
-                  <Preview url={url} />
+                  {url ? (
+                    <iframe
+                      className="h-full w-full border-none m-0 p-0"
+                      src={url}
+                      frameBorder="0"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <p>Loading...</p>
+                  )}
                 </div>
               )}
             </div>
@@ -779,24 +792,3 @@ const spawnCommand = async (
   // );
   return installProcess.exit;
 };
-
-interface PreviewProps {
-  url: string;
-}
-
-export function Preview({ url }: PreviewProps) {
-  return (
-    <div className="w-full h-full">
-      {url ? (
-        <iframe
-          className="h-full w-full border-none m-0 p-0"
-          src={url}
-          frameBorder="0"
-          allowFullScreen
-        />
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
-  );
-}

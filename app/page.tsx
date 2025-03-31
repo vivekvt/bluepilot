@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { appConfig } from '@/src/config';
-import { ShineBorder } from '@/src/components/magicui/shine-border';
-import { Meteors } from '@/src/components/magicui/meteors';
 import { NeonGradientCard } from '@/src/components/magicui/neon-gradient-card';
+import { AnimatedGridPattern } from '@/src/components/magicui/animated-grid-pattern';
+import { cn } from '@/lib/utils';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
@@ -25,9 +25,18 @@ export default function LandingPage() {
   return (
     <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {/* <Meteors number={50} /> */}
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.2}
+        duration={3}
+        repeatDelay={1}
+        className={cn(
+          '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
+          'inset-x-0  h-[100%]'
+        )}
+      />
       <header className="container flex items-center justify-between py-6">
         <div className="flex items-center gap-2">
-          {/* <Sparkles className="h-6 w-6 text-primary" /> */}
           <h1 className="text-xl font-bold">{appConfig.title}</h1>
         </div>
         <nav className="flex items-center gap-2">
@@ -94,7 +103,7 @@ export default function LandingPage() {
               icon: <Code className="h-8 w-8 text-primary" />,
               title: 'Complete Code',
               description:
-                'Get production-ready HTML, CSS, and JavaScript code that you can use right away.',
+                'Get full code that you can download use right away.',
             },
             {
               icon: <ArrowRight className="h-8 w-8 text-primary" />,
@@ -117,7 +126,7 @@ export default function LandingPage() {
         </motion.div>
       </main>
 
-      <footer className="border-t py-6">
+      <footer className="border-tno py-6">
         <div className="container flex flex-col md:flex-row items-center justify-between">
           <p className="text-sm text-muted-foreground">
             © 2025 {appConfig.title}. All rights reserved.
