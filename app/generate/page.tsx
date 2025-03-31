@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { nanoid } from 'nanoid';
+
 import {
   ArrowLeft,
   Code,
@@ -31,19 +32,19 @@ import {
   FileNode,
   FileSystemTree,
   SymlinkNode,
+  WebContainer,
 } from '@webcontainer/api';
 import { Step, StepStatus, StepType } from '@/types';
 import { parseXml } from '@/src/utils/steps';
 import { useWebContainer } from '@/src/hooks/useWebContainer';
 import { appConfig } from '@/src/config';
 import { ShineBorder } from '@/src/components/magicui/shine-border';
-import { WebContainer } from '@webcontainer/api';
-import { set } from 'date-fns';
 import {
   AnimatedSpan,
   Terminal,
   TypingAnimation,
 } from '@/src/components/magicui/terminal';
+import { useDownload } from '@/src/hooks/useDownload';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -89,7 +90,7 @@ export default function GeneratePage() {
     null
   );
   const [llmMessages, setLlmMessages] = useState<LLMPrompt[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(true);
   const [steps, setSteps] = useState<Step[]>([]);
   const [activeTab, setActiveTab] = useState('code');
   const [newMessage, setNewMessage] = useState('');
@@ -103,32 +104,39 @@ export default function GeneratePage() {
     output: [],
   });
 
+  const { onDownload } = useDownload();
+
   const init = async () => {
     try {
       if (isGenerating) return;
       setIsGenerating(true);
       const response = await apiClient.post<{
-        prompts: string[];
-        uiPrompts: string[];
+        basePrompts: LLMPrompt[];
+        files: FileSystemTree;
       }>('/api/template', {
         prompt: promptParam,
       });
 
-      const { prompts, uiPrompts } = response.data;
+      const { basePrompts, files: initialFiles } = response.data;
 
-      if (!(prompts?.length > 0)) {
+      if (!(basePrompts?.length > 0)) {
         throw new Error('Give a valid prompt');
       }
 
-      const oldSteps = uiPrompts?.map((p) => parseXml(p)).flat() || [];
-      // setSteps(newSteps);
+      setFiles(initialFiles);
+      await webContainer?.mount(initialFiles);
+      const installStatus = await installDependencies();
 
-      const newLlmPrompts = [...prompts, promptParam].map((message) => ({
-        role: PromptRole.User,
-        text: message,
-      }));
       setIsGenerating(false);
-      startChat(newLlmPrompts, oldSteps);
+      startChat(basePrompts, [
+        {
+          id: nanoid(),
+          title: 'Initial File Setup',
+          status: StepStatus.Pending,
+          description: '',
+          type: StepType.Title,
+        },
+      ]);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -136,9 +144,10 @@ export default function GeneratePage() {
   };
 
   useEffect(() => {
-    if (!promptParam) return;
-    init();
-  }, [promptParam]);
+    if (promptParam && webContainer) {
+      init();
+    }
+  }, [promptParam, webContainer]);
 
   const startChat = async (newLlmPrompts: LLMPrompt[], oldSteps?: Step[]) => {
     try {
@@ -301,6 +310,14 @@ export default function GeneratePage() {
     }
   }
 
+  async function installDependencies() {
+    if (!webContainer) return;
+    // Install dependencies
+    const installProcess = await webContainer.spawn('npm', ['install']);
+    // Wait for install command to exit
+    return installProcess.exit;
+  }
+
   useEffect(() => {
     if (isGenerating && activeTab === 'preview') {
       setActiveTab('code');
@@ -327,9 +344,14 @@ export default function GeneratePage() {
 
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => onDownload(files)}
+            >
               <Download className="h-4 w-4" />
-              <span>Deploy</span>
+              <span>Download</span>
             </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
@@ -617,7 +639,7 @@ export default function GeneratePage() {
               ) : (
                 <div className="h-full w-full ">
                   {/* Preview */}
-                  {webContainer && <Preview url={url} />}
+                  <Preview url={url} />
                 </div>
               )}
             </div>
@@ -735,21 +757,10 @@ const npmInstallAndRun = async (code: string, webContainer: WebContainer) => {
     const parts = command.split(' ');
     const cmd = parts[0];
     const args = parts.slice(1);
-    console.log(`Running command: ${cmd} ${args.join(' ')}`);
-    // await webContainer.spawn(cmd, args);
     const exitCode = await spawnCommand(webContainer, cmd, args);
     if (exitCode !== 0) {
       throw new Error('spawnCommand failed');
     }
-    // console.log({ exitCode });
-    // const installProcess = await webContainer?.spawn(cmd, args);
-    // installProcess.output.pipeTo(
-    //   new WritableStream({
-    //     write(data) {
-    //       console.log(data);
-    //     },
-    //   })
-    // );
   }
 };
 
@@ -771,57 +782,9 @@ const spawnCommand = async (
 
 interface PreviewProps {
   url: string;
-  // webContainer: WebContainer;
 }
 
 export function Preview({ url }: PreviewProps) {
-  // const [url, setUrl] = useState<string | null>(null);
-
-  // const run = async () => {
-  //   console.log('run');
-  //   const exitCode = await installDependencies();
-  //   if (exitCode !== 0) {
-  //     throw new Error('Installation failed');
-  //   }
-  //   startDevServer();
-  // };
-
-  // const installDependencies = async () => {
-  //   const installProcess = await webContainer.spawn('npm', ['install']);
-
-  //   console.log('installProcess.exit', installProcess.exit);
-
-  //   // installProcess.output.pipeTo(
-  //   //   new WritableStream({
-  //   //     write(data) {
-  //   //       console.log(data);
-  //   //     },
-  //   //   })
-  //   // );
-  //   return installProcess.exit;
-  // };
-
-  // async function startDevServer() {
-  //   // Run `npm run start` to start the Express app
-  //   await webContainer.spawn('npm', ['run', 'dev']);
-
-  //   // Wait for `server-ready` event
-  //   webContainer.on('server-ready', (port, url) => {
-  //     console.log({ port, url });
-  //     setUrl(url);
-  //   });
-  // }
-
-  // useEffect(() => {
-  //   startDevServer();
-  //   //   // Wait for `server-ready` event
-  //   // if (!webContainer || url) return;
-  //   // webContainer.on('server-ready', (port, url) => {
-  //   //   console.log({ port, url });
-  //   //   setUrl(url);
-  //   // });
-  // }, [webContainer]);
-
   return (
     <div className="w-full h-full">
       {url ? (

@@ -1,4 +1,5 @@
 import { Step, StepStatus, StepType } from '@/types';
+import { nanoid } from 'nanoid';
 
 export function parseXml(response: string): Step[] {
   // Extract the XML content between <boltArtifact> tags
@@ -20,7 +21,7 @@ export function parseXml(response: string): Step[] {
 
   // Add initial artifact step
   steps.push({
-    id: stepId++,
+    id: nanoid(),
     title: artifactTitle,
     description: '',
     type: StepType.Title,
@@ -38,7 +39,7 @@ export function parseXml(response: string): Step[] {
     if (type === 'file') {
       // File creation step
       steps.push({
-        id: stepId++,
+        id: nanoid(),
         title: `Create ${filePath || 'file'}`,
         description: '',
         type: StepType.File,
@@ -49,7 +50,7 @@ export function parseXml(response: string): Step[] {
     } else if (type === 'shell') {
       // Shell command step
       steps.push({
-        id: stepId++,
+        id: nanoid(),
         title: 'Run command',
         description: '',
         type: StepType.Shell,

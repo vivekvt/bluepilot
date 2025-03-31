@@ -12,7 +12,7 @@ export enum StepStatus {
 }
 
 export interface Step {
-  id: number;
+  id: string;
   title: string;
   description: string;
   type: StepType;
