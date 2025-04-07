@@ -81,7 +81,7 @@ export function DeployButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className={className}>
-          <Rocket className="h-4 w-4" />
+          <Rocket className="h-3 w-3" />
           {buttonText}
         </Button>
       </DialogTrigger>

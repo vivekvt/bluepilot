@@ -1,5 +1,5 @@
+import { apiClient } from '@/lib/utils/apiClient';
 import { FileSystemTree } from '@webcontainer/api';
-import { apiClient } from '../utils/apiClient';
 import { useState } from 'react';
 
 const initialDeployState = {

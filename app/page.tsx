@@ -3,22 +3,54 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Code, Sparkles } from 'lucide-react';
+import { ArrowRight, Code, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { appConfig } from '@/src/config';
-import { NeonGradientCard } from '@/src/components/magicui/neon-gradient-card';
-import { AnimatedGridPattern } from '@/src/components/magicui/animated-grid-pattern';
+import { appConfig } from '@/lib/config';
+import { NeonGradientCard } from '@/components/magicui/neon-gradient-card';
+import { AnimatedGridPattern } from '@/components/magicui/animated-grid-pattern';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { apiClient } from '@/lib/utils/apiClient';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleGenerate = () => {
-    if (prompt.trim()) {
-      router.push(`/generate?prompt=${encodeURIComponent(prompt)}`);
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+
+    try {
+      setLoading(true);
+
+      const supabase = createClient();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const accessToken = session?.access_token;
+
+      const { data } = await apiClient.post(
+        '/api/project',
+        { prompt },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!data?.project?.id) {
+        throw new Error('Project creation failed');
+      }
+      router.push(`/chat/${data?.project?.id}`);
+    } catch (error) {
+      setLoading(false);
+      alert('Project creation failed. Please try again.');
     }
   };
 
@@ -35,16 +67,6 @@ export default function LandingPage() {
           'inset-x-0  h-[100%]'
         )}
       />
-      <header className="container flex items-center justify-between py-6">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold">{appConfig.title}</h1>
-        </div>
-        <nav className="flex items-center gap-2">
-          <ThemeToggle />
-          <Button variant="default">Sign In</Button>
-        </nav>
-      </header>
-
       <main className="flex-1 flex flex-col items-center justify-center container max-w-5xl px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -78,8 +100,20 @@ export default function LandingPage() {
                 className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               />
-              <Button onClick={handleGenerate} className="gap-2 w-full mt-2">
-                Generate <ArrowRight className="h-4 w-4" />
+              <Button
+                disabled={loading}
+                onClick={handleGenerate}
+                className="gap-2 w-full mt-2"
+              >
+                {loading ? (
+                  <>
+                    Generating... <Loader2 className="animate-spin w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    Generate <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
               {/* </div> */}
             </div>

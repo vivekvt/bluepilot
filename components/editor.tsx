@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-// import * as monaco from 'monaco-editor';
 import MonacoEditor from '@monaco-editor/react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +27,19 @@ export function Editor({
         className={cn('w-full h-full overflow-hidden', className)}
         defaultLanguage={language}
         defaultValue={value}
+        value={value}
+        path="file.js"
+        theme="vs-dark"
+        options={{
+          fontSize: 12,
+          fontFamily: 'Fira Code, monospace',
+          readOnly,
+          minimap: {
+            enabled: false,
+          },
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+        }}
         onChange={(newValue: string = '') => onChange(newValue || '')}
       />
     </>

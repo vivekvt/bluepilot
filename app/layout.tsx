@@ -2,6 +2,10 @@ import type React from 'react';
 import '@/app/globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import type { Metadata } from 'next';
+import { appConfig } from '@/lib/config';
+import Navbar from '@/components/navbar';
+import { getUser } from '@/lib/supabase/helper';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
   title: appConfig.title,
@@ -26,11 +30,12 @@ export const metadata: Metadata = {
   // },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getUser();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
@@ -40,12 +45,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <AuthProvider initialUser={user}>
+            {/* <Navbar /> */}
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
-import './globals.css';
-import { appConfig } from '@/src/config';

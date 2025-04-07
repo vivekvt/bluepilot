@@ -25,7 +25,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/generate',
+        source: '/chat/(.*)',
         headers: [
           {
             key: 'Cross-Origin-Embedder-Policy',
