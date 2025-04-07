@@ -14,8 +14,11 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { apiClient } from '@/lib/utils/apiClient';
 import { createClient } from '@/lib/supabase/client';
+import Navbar from '@/components/navbar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LandingPage() {
+  const { user } = useAuth();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -25,6 +28,10 @@ export default function LandingPage() {
 
     try {
       setLoading(true);
+      if (!user) {
+        alert('Please log in to create a project.');
+        router.push(`/auth`);
+      }
 
       const supabase = createClient();
 
@@ -56,6 +63,7 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <Navbar />
       {/* <Meteors number={50} /> */}
       <AnimatedGridPattern
         numSquares={30}
