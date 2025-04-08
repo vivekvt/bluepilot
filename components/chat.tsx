@@ -51,6 +51,7 @@ import ChatPanel from './chat-pannel';
 import { AnimatedGridPattern } from './magicui/animated-grid-pattern';
 import { DotPattern } from '@/src/components/magicui/dot-pattern';
 import { Vortex } from '@/src/components/ui/vortex';
+import Sidebar from './sidebar';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -95,6 +96,7 @@ const supabase = createClient();
 
 export default function Chat(props: ChatProps) {
   const { webContainer, runCommand } = useWebContainer();
+  const [isOpen, setIsOpen] = useState(false);
 
   const [files, setFiles] = useState<FileSystemTree>(
     props.project?.files || {}
@@ -137,8 +139,10 @@ export default function Chat(props: ChatProps) {
   };
 
   useEffect(() => {
+    console.log('webcontianer hook');
     if (webContainer) {
-      init();
+      console.log('webcontianer booted -------------');
+      // init();
     }
   }, [webContainer]);
 
@@ -146,22 +150,22 @@ export default function Chat(props: ChatProps) {
     role: 'user' | 'assistant',
     content: string | any
   ) => {
-    const { error: messageError, data } = await supabase
-      .from('messages')
-      .insert([
-        {
-          project_id: props?.project.id,
-          role,
-          text: role === 'user' ? content : '',
-          content: role === 'assistant' ? content : null,
-        },
-      ])
-      .select();
-    if (messageError || !data?.[0]) {
-      alert(`Error while saving message:`);
-      return;
-    }
-    setMessages((prev) => [...prev, data?.[0]]);
+    // const { error: messageError, data } = await supabase
+    //   .from('messages')
+    //   .insert([
+    //     {
+    //       project_id: props?.project.id,
+    //       role,
+    //       text: role === 'user' ? content : '',
+    //       content: role === 'assistant' ? content : null,
+    //     },
+    //   ])
+    //   .select();
+    // if (messageError || !data?.[0]) {
+    //   alert(`Error while saving message:`);
+    //   return;
+    // }
+    // setMessages((prev) => [...prev, data?.[0]]);
   };
 
   const startChat = async (newLlmPrompts: LLMPrompt[]) => {
@@ -405,7 +409,12 @@ export default function Chat(props: ChatProps) {
           {/* <Link href="/">
             <h1 className="text-lg font-semibold">{appConfig.title}</h1>
           </Link> */}
-          <Button variant="ghost" size="icon" className="p-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="p-0"
+            onClick={() => setIsOpen(true)}
+          >
             <Menu />
           </Button>
 
@@ -464,6 +473,7 @@ export default function Chat(props: ChatProps) {
           </div>
         </div>
       </header>
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         <div className="w-1/4 pl-2 pb-2 pt-2">

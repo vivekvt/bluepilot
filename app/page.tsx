@@ -1,21 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Code, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { appConfig } from '@/lib/config';
 import { NeonGradientCard } from '@/components/magicui/neon-gradient-card';
 import { AnimatedGridPattern } from '@/components/magicui/animated-grid-pattern';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import { apiClient } from '@/lib/utils/apiClient';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/navbar';
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -64,7 +61,6 @@ export default function LandingPage() {
   return (
     <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navbar />
-      {/* <Meteors number={50} /> */}
       <AnimatedGridPattern
         numSquares={30}
         maxOpacity={0.2}
@@ -75,13 +71,13 @@ export default function LandingPage() {
           'inset-x-0  h-[100%]'
         )}
       />
+      {/* <DotPattern
+        className={cn(
+          '[mask-image:radial-gradient(400px_circle_at_center,white,transparent)]'
+        )}
+      /> */}
       <main className="flex-1 flex flex-col items-center justify-center container max-w-5xl px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
-        >
+        <div className="text-center mb-8">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             Generate Websites with AI
           </h1>
@@ -89,18 +85,11 @@ export default function LandingPage() {
             Turn your ideas into code. Just describe what you want, and we'll
             generate a complete website for you.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="w-full max-w-2xl "
-        >
+        <div className="w-full max-w-2xl ">
           <NeonGradientCard className="m-0 p-0">
             <div className="p-3 bg-card rounded-3xl">
-              {/* <div className="relative flex flex-col md:flex-row gap-2 p-2 border rounded-lg bg-card shadow-sm"> */}
-              {/* <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} /> */}
               <Input
                 placeholder="Describe the website you want to create..."
                 value={prompt}
@@ -123,17 +112,11 @@ export default function LandingPage() {
                   </>
                 )}
               </Button>
-              {/* </div> */}
             </div>
           </NeonGradientCard>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
               icon: <Sparkles className="h-8 w-8 text-primary" />,
@@ -165,7 +148,7 @@ export default function LandingPage() {
               <p className="text-muted-foreground">{feature.description}</p>
             </div>
           ))}
-        </motion.div>
+        </div>
       </main>
 
       <footer className="border-tno py-6">

@@ -72,7 +72,10 @@ export default function Navbar() {
               <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="text-red-500 hover:bg-red-600 dark:hover:bg-red-900/20 transition-colors"
+                  >
                     <LogOut />
                     Logout
                   </DropdownMenuItem>
@@ -88,7 +91,10 @@ export default function Navbar() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>
+                    <AlertDialogAction
+                      onClick={handleLogout}
+                      className="text-red-500 bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-900/20 transition-colors"
+                    >
                       Yes, logout
                     </AlertDialogAction>
                   </AlertDialogFooter>
