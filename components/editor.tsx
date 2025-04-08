@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { cn } from '@/lib/utils';
+import { SelectedFileInfo } from './chat';
+import { FileSystemTree } from '@webcontainer/api';
 
 interface EditorProps {
   value: string;
@@ -12,7 +14,7 @@ interface EditorProps {
   readOnly?: boolean;
 }
 
-export function Editor({
+export function EditorChild({
   value,
   onChange,
   language = 'javascript',
@@ -87,3 +89,53 @@ export const getLanguageForFile = (filename: string) => {
       return 'text';
   }
 };
+
+export default function Editor({
+  selectedFile,
+  setSelectedFile,
+  updateFileTree,
+  setFiles,
+}: {
+  selectedFile: SelectedFileInfo | null;
+  setSelectedFile: (file: SelectedFileInfo) => void;
+  updateFileTree: (
+    files: any,
+    path: string,
+    action: string,
+    content?: string
+  ) => any;
+  setFiles: (files: any) => void;
+}) {
+  return (
+    <div className="flex-1 overflow-hidden relative">
+      <div className="absolute inset-0">
+        {selectedFile && (
+          <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b py-2">
+            <span>{selectedFile.path}</span>
+          </div>
+        )}
+        {selectedFile && (
+          <div className="h-[calc(100%-25px)]">
+            <EditorChild
+              value={selectedFile.content || ''}
+              language={getLanguageForFile(selectedFile.path)}
+              onChange={(value) => {
+                if (selectedFile) {
+                  // Update the file content in the WebContainer file structure
+                  setSelectedFile({
+                    ...selectedFile,
+                    content: value || '',
+                  });
+
+                  setFiles((prev: FileSystemTree) =>
+                    updateFileTree(prev, selectedFile.path, 'update', value)
+                  );
+                }
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

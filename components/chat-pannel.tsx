@@ -3,9 +3,10 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileCode, Terminal, Send } from 'lucide-react';
+import { FileCode, Terminal, Send, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TChatMessage, TProject } from '@/types/project';
+import { Button } from './ui/button';
 // import Markdown from 'react-markdown';
 
 interface ChatPanelProps {
@@ -55,6 +56,12 @@ export default function ChatPanel({
   return (
     <div className={cn('relative flex flex-col h-full w-full', className)}>
       {/* Messages Container */}
+      <div className="flex items-center justify-end">
+        <Button variant="ghost" size="sm">
+          {project?.title}
+          <ChevronDown />
+        </Button>
+      </div>
       <div
         ref={containerRef}
         className="relative flex-1 overflow-y-auto space-y-4 pt-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"

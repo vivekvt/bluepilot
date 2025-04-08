@@ -1,0 +1,97 @@
+import React, { useState } from 'react';
+import { Button } from './ui/button';
+import { Code, Download, Eye, Loader, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { appConfig } from '@/lib/config';
+import { DeployButton } from './deploy-button';
+import { FileSystemTree } from '@webcontainer/api';
+import Sidebar from './sidebar';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+
+interface ChatHeaderProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  isGenerating: boolean;
+  onDownload: (files: FileSystemTree) => void;
+  files: FileSystemTree;
+}
+
+export default function ChatHeader({
+  activeTab,
+  setActiveTab,
+  isGenerating,
+  onDownload,
+  files,
+}: ChatHeaderProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <header className="flex w-full items-center pt-2 px-3">
+        <div className="w-1/4  overflow-auto flex items-center gap-1 justify-between">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="p-0"
+              onClick={() => setIsOpen(true)}
+            >
+              <Menu />
+            </Button>
+            <Link href="/">
+              <h1 className="text-lg font-semibold">{appConfig.title}</h1>
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex flex-1 overflow-auto">
+          <div className="flex items-center justify-between w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger
+                  value="code"
+                  className={
+                    activeTab === 'code'
+                      ? 'border-primary'
+                      : 'border-transparent'
+                  }
+                >
+                  <Code className="h-4 w-4 mr-2" />
+                  Code
+                </TabsTrigger>
+                <TabsTrigger
+                  value="preview"
+                  disabled={isGenerating}
+                  className={
+                    activeTab === 'preview'
+                      ? 'border-primary'
+                      : 'border-transparent'
+                  }
+                >
+                  {isGenerating ? (
+                    <Loader className="animate-spin h-4 w-4 mr-2" />
+                  ) : (
+                    <Eye className="h-4 w-4 mr-2" />
+                  )}
+                  Preview
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-2">
+              {/* <ThemeToggle /> */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1"
+                onClick={() => onDownload(files)}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <DeployButton projectFiles={files} className="gap1" />
+            </div>
+          </div>
+        </div>
+      </header>
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+    </>
+  );
+}
