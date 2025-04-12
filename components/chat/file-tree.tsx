@@ -7,16 +7,6 @@ import {
   FileCode,
   Folder,
   FolderOpen,
-  FileText,
-  FileJson,
-  FileImage,
-  FileArchive,
-  FileAudio,
-  FileVideo,
-  FileSpreadsheet,
-  FilePieChart,
-  FileTerminal,
-  FileIcon,
   Loader,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -48,61 +38,6 @@ interface FileTreeProps {
   level?: number;
   isUpdatingFile?: boolean;
 }
-
-// Helper function to get file icon based on extension
-const getFileIcon = (fileName: string) => {
-  const extension = fileName.split('.').pop()?.toLowerCase();
-
-  switch (extension) {
-    case 'js':
-    case 'jsx':
-    case 'ts':
-    case 'tsx':
-      return <FileCode className="h-4 w-4 flex-shrink-0 text-amber-500" />;
-    case 'json':
-      return <FileJson className="h-4 w-4 flex-shrink-0 text-yellow-500" />;
-    case 'md':
-    case 'txt':
-      return <FileText className="h-4 w-4 flex-shrink-0 text-blue-400" />;
-    case 'png':
-    case 'jpg':
-    case 'jpeg':
-    case 'gif':
-    case 'svg':
-    case 'webp':
-      return <FileImage className="h-4 w-4 flex-shrink-0 text-purple-400" />;
-    case 'zip':
-    case 'rar':
-    case 'tar':
-    case 'gz':
-      return <FileArchive className="h-4 w-4 flex-shrink-0 text-orange-400" />;
-    case 'mp3':
-    case 'wav':
-    case 'ogg':
-      return <FileAudio className="h-4 w-4 flex-shrink-0 text-green-400" />;
-    case 'mp4':
-    case 'webm':
-    case 'mov':
-      return <FileVideo className="h-4 w-4 flex-shrink-0 text-red-400" />;
-    case 'csv':
-    case 'xls':
-    case 'xlsx':
-      return (
-        <FileSpreadsheet className="h-4 w-4 flex-shrink-0 text-green-500" />
-      );
-    case 'html':
-    case 'css':
-      return <FileCode className="h-4 w-4 flex-shrink-0 text-orange-500" />;
-    case 'sh':
-    case 'bash':
-    case 'zsh':
-      return <FileTerminal className="h-4 w-4 flex-shrink-0 text-gray-400" />;
-    case 'pdf':
-      return <FilePieChart className="h-4 w-4 flex-shrink-0 text-red-500" />;
-    default:
-      return <FileIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />;
-  }
-};
 
 // Helper function to check if a path is a parent of another path
 const isParentPath = (parentPath: string, childPath: string) => {
@@ -161,9 +96,9 @@ export default function FileTree({
             )}
           </span>
           {isExpanded ? (
-            <FolderOpen className="h-4 w-4 flex-shrink-0 text-amber-400" />
+            <FolderOpen className="h-4 w-4 flex-shrink-0" />
           ) : (
-            <Folder className="h-4 w-4 flex-shrink-0 text-amber-400" />
+            <Folder className="h-4 w-4 flex-shrink-0" />
           )}
           <span className="truncate text-xs font-medium">{name}</span>
         </button>
@@ -220,7 +155,7 @@ export default function FileTree({
       {isSelected && isUpdatingFile ? (
         <Loader className="h-4 w-4 flex-shrink-0 animate-spin" />
       ) : (
-        getFileIcon(name)
+        <FileCode className="h-4 w-4 flex-shrink-0" />
       )}
       <span className={cn('truncate text-xs', isSelected && 'font-medium')}>
         {name}

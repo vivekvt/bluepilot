@@ -14,6 +14,8 @@ import ChatPanel from './chat-pannel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
+import { log } from 'console';
+import { BrowserNavbar } from './browser-navbar';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -66,15 +68,18 @@ export default function Chat(props: IChatProps) {
     output: [],
   });
 
+  const [pendingSteps, setPendingSteps] = useState<IStep[]>([]);
+  const [processedStepIds, setProcessedStepIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const { onDownload } = useDownload();
 
   const init = async () => {
     try {
       if (!webContainer) return;
       setIsGenerating(true);
-      console.log('init');
-      // await startCloning(props.project?.files);
-      // setFiles(props.project?.files);
       await webContainer.mount(props.project?.files);
       await runCommand('npm', ['install']);
       setIsGenerating(false);
@@ -117,6 +122,55 @@ export default function Chat(props: IChatProps) {
     // setMessages((prev) => [...prev, data?.[0]]);
   };
 
+  useEffect(() => {
+    const processSteps = async () => {
+      if (
+        !isProcessing &&
+        !isGenerating &&
+        pendingSteps.length === 0 &&
+        processedStepIds?.size > 0
+      ) {
+        console.log('Run dev server');
+        await startDevServer();
+      }
+
+      if (isProcessing || pendingSteps.length === 0) {
+        return;
+      }
+
+      setIsProcessing(true);
+      try {
+        // Filter out steps we've already processed
+        const newSteps = pendingSteps.filter((step) => {
+          const stepId = `${step.action}-${step.path}`;
+          return !processedStepIds.has(stepId);
+        });
+
+        if (newSteps.length === 0) {
+          setPendingSteps([]);
+          return;
+        }
+
+        console.log(`Processing ${newSteps.length} steps`);
+        await applyLLMSteps(newSteps);
+
+        // Update processed steps
+        const updatedProcessedIds = new Set(processedStepIds);
+        newSteps.forEach((step) => {
+          const stepId = `${step.action}-${step.path}`;
+          updatedProcessedIds.add(stepId);
+        });
+
+        setProcessedStepIds(updatedProcessedIds);
+        setPendingSteps([]); // Clear pending steps after processing
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    processSteps();
+  }, [pendingSteps, processedStepIds, isProcessing]);
+
   const startChat = async (newLlmPrompts: LLMPrompt[]) => {
     try {
       if (isGenerating) return;
@@ -128,7 +182,7 @@ export default function Chat(props: IChatProps) {
 
       const accessToken = session?.access_token;
 
-      const { data } = await apiClient.post(
+      const response = await apiClient.post(
         '/api/chat',
         {
           messages: newLlmPrompts,
@@ -137,14 +191,38 @@ export default function Chat(props: IChatProps) {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
+          responseType: 'stream',
+          adapter: 'fetch',
         }
       );
-      await saveMessageToDB('assistant', data?.steps);
-      if (data?.success && data?.steps?.length > 0) {
-        await applyLLMSteps(data?.steps);
+
+      const reader = response.data.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        try {
+          const chunk = decoder.decode(value, { stream: true });
+          const allSteps = JSON.parse(chunk);
+
+          // Add all steps to pending - our useEffect will handle filtering
+          setPendingSteps(allSteps);
+        } catch (error) {
+          console.error('Error parsing update:', error);
+        }
       }
 
-      await startDevServer();
+      console.log('Completed reading stream');
+      setIsGenerating(false);
+
+      // await saveMessageToDB('assistant', data?.steps);
+      // if (data?.success && data?.steps?.length > 0) {
+      //   await applyLLMSteps(data?.steps);
+      // }
+
+      // await startDevServer();
 
       setIsGenerating(false);
     } catch (error: any) {
@@ -200,6 +278,7 @@ export default function Chat(props: IChatProps) {
     // Process each step
     for await (const step of steps) {
       try {
+        console.log(`step: ${step.action} ${step.path}`);
         // Ensure /src exists in the WebContainer filesystem
         await webContainer.fs.mkdir('/src', { recursive: true });
 
@@ -252,6 +331,7 @@ export default function Chat(props: IChatProps) {
           default:
             throw new Error(`Unknown action: ${step.action}`);
         }
+        console.log(`compeleted: step: ${step.action} ${step.path}`);
       } catch (error) {
         console.error(
           `Error processing step ${step.action} at ${step.path}:`,
@@ -320,10 +400,6 @@ export default function Chat(props: IChatProps) {
       setActiveTab('code');
     }
   }, [isGenerating]);
-
-  useEffect(() => {
-    console.log('activeTab changed', activeTab);
-  }, [activeTab]);
 
   // useEffect(() => {
   //   const debouncedUpdateFiles = debounce(async () => {
@@ -415,8 +491,9 @@ export default function Chat(props: IChatProps) {
                   />
                 </div>
               ) : (
-                <div className="h-full w-full ">
+                <div className="h-full w-full">
                   {/* Preview */}
+                  <BrowserNavbar />
                   {url ? (
                     <iframe
                       className="h-full w-full border-none m-0 p-0"
@@ -425,7 +502,29 @@ export default function Chat(props: IChatProps) {
                       allowFullScreen
                     />
                   ) : (
-                    <p>Loading...</p>
+                    <div className="flex h-full w-full ">
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="mb-6">
+                            <div className="inline-block relative w-16 h-16">
+                              <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          </div>
+                          <h2 className="text-xl font-semibold text-blue-400 mb-2">
+                            Loading Preview
+                            <span className="text-blue-300">...</span>
+                          </h2>
+                          <div className="mt-6 w-64 mx-auto">
+                            <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 rounded-full animate-pulse-subtle origin-left"
+                                style={{ width: '80%' }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
