@@ -62,7 +62,7 @@ export default function LandingPage() {
     <div className="relative flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navbar />
       <AnimatedGridPattern
-        numSquares={30}
+        numSquares={0}
         maxOpacity={0.2}
         duration={3}
         repeatDelay={1}
@@ -71,11 +71,6 @@ export default function LandingPage() {
           'inset-x-0  h-[100%]'
         )}
       />
-      {/* <DotPattern
-        className={cn(
-          '[mask-image:radial-gradient(400px_circle_at_center,white,transparent)]'
-        )}
-      /> */}
       <main className="flex-1 flex flex-col items-center justify-center container max-w-5xl px-4 py-12">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -87,9 +82,9 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="w-full max-w-2xl ">
-          <NeonGradientCard className="m-0 p-0">
-            <div className="p-3 bg-card rounded-3xl">
+        <div className="w-full max-w-2xl">
+          <NeonGradientCard>
+            <div className="p-3 bg-background rounded-3xl">
               <Input
                 placeholder="Describe the website you want to create..."
                 value={prompt}

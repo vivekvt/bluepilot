@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Editor from '@/components/editor';
+import Editor from '@/components/chat/editor';
 import { apiClient } from '@/lib/utils/apiClient';
 import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
@@ -12,7 +12,6 @@ import { createClient } from '@/lib/supabase/client';
 import { IStep } from '@/types/steps';
 import ChatPanel from './chat-pannel';
 import FileTree from './file-tree';
-import useSequentialFileClone from '@/hooks/file';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 
@@ -32,7 +31,7 @@ export interface SelectedFileInfo {
   content: string;
 }
 
-interface ChatProps {
+export interface IChatProps {
   project: TProject;
   messages: TChatMessage[];
 }
@@ -44,17 +43,18 @@ export interface TerminalOutput {
 
 const supabase = createClient();
 
-export default function Chat(props: ChatProps) {
+export default function Chat(props: IChatProps) {
   const { webContainer, runCommand } = useWebContainer();
 
-  const [files, setFiles] = useState<FileSystemTree>({});
-  // props?.project?.files
+  const [files, setFiles] = useState<FileSystemTree>(
+    props?.project?.files || {}
+  );
 
   const [selectedFile, setSelectedFile] = useState<SelectedFileInfo | null>(
     null
   );
-  const { startCloning, isCloning, cloneSelectedFile, clonedFiles } =
-    useSequentialFileClone();
+  // const { startCloning, isCloning, cloneSelectedFile, clonedFiles } =
+  //   useSequentialFileClone();
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('code');
@@ -72,17 +72,17 @@ export default function Chat(props: ChatProps) {
     try {
       if (!webContainer) return;
       setIsGenerating(true);
-
-      await startCloning(props.project?.files);
-      setFiles(props.project?.files);
+      console.log('init');
+      // await startCloning(props.project?.files);
+      // setFiles(props.project?.files);
       await webContainer.mount(props.project?.files);
       await runCommand('npm', ['install']);
       setIsGenerating(false);
-      // if (!(props?.messages?.length > 1)) {
-      //   await startChat([
-      //     { role: PromptRole.User, content: props.project.prompt },
-      //   ]);
-      // }
+      if (!(props?.messages?.length > 1)) {
+        await startChat([
+          { role: PromptRole.User, content: props.project.prompt },
+        ]);
+      }
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -321,6 +321,10 @@ export default function Chat(props: ChatProps) {
     }
   }, [isGenerating]);
 
+  useEffect(() => {
+    console.log('activeTab changed', activeTab);
+  }, [activeTab]);
+
   // useEffect(() => {
   //   const debouncedUpdateFiles = debounce(async () => {
   //     return; // remove this later
@@ -347,10 +351,10 @@ export default function Chat(props: ChatProps) {
   // }, [files, props.project?.id]);
 
   return (
-    <div className="flex flex-col h-screen relative">
+    <div className="flex flex-col h-screen relative min-h-800">
       {/* Header */}
       <ChatHeader
-        activeTab="code"
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
         files={files}
         onDownload={onDownload}
@@ -385,25 +389,19 @@ export default function Chat(props: ChatProps) {
                         FILES
                       </div>
                       <div>
-                        {Object.entries(isCloning ? clonedFiles : files).map(
-                          ([name, entry]) => (
-                            <FileTree
-                              key={name}
-                              name={name}
-                              path={name}
-                              entry={entry}
-                              onFileClick={(path, content) => {
-                                setSelectedFile({ path, content });
-                              }}
-                              selectedPath={
-                                isCloning
-                                  ? cloneSelectedFile?.path
-                                  : selectedFile?.path || ''
-                              }
-                              isUpdatingFile={isCloning}
-                            />
-                          )
-                        )}
+                        {Object.entries(files).map(([name, entry]) => (
+                          <FileTree
+                            key={name}
+                            name={name}
+                            path={name}
+                            entry={entry}
+                            onFileClick={(path, content) => {
+                              setSelectedFile({ path, content });
+                            }}
+                            selectedPath={selectedFile?.path || ''}
+                            // isUpdatingFile={isCloning}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -411,7 +409,7 @@ export default function Chat(props: ChatProps) {
                   {/* Code editor */}
                   <Editor
                     setFiles={setFiles}
-                    selectedFile={isCloning ? cloneSelectedFile : selectedFile}
+                    selectedFile={selectedFile}
                     setSelectedFile={setSelectedFile}
                     updateFileTree={updateFileTree}
                   />
@@ -433,12 +431,13 @@ export default function Chat(props: ChatProps) {
               )}
             </div>
 
-            <EditorTerminal
-              showTerminal={showTerminal}
-              setShowTerminal={setShowTerminal}
-              activeTab={activeTab}
-              terminalOutput={terminalOutput}
-            />
+            {activeTab === 'code' && (
+              <EditorTerminal
+                showTerminal={showTerminal}
+                setShowTerminal={setShowTerminal}
+                terminalOutput={terminalOutput}
+              />
+            )}
           </div>
         </div>
       </div>

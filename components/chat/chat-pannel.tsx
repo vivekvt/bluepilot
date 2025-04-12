@@ -6,8 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { FileCode, Terminal, Send, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TChatMessage, TProject } from '@/types/project';
-import { Button } from './ui/button';
-// import Markdown from 'react-markdown';
+import { Button } from '../ui/button';
 
 interface ChatPanelProps {
   messages: TChatMessage[];

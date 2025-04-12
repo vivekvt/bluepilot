@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
 import { Code, Download, Eye, Loader, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { appConfig } from '@/lib/config';
 import { DeployButton } from './deploy-button';
 import { FileSystemTree } from '@webcontainer/api';
 import Sidebar from './sidebar';
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { Button } from '../ui/button';
 
 interface ChatHeaderProps {
   activeTab: string;
@@ -24,6 +24,7 @@ export default function ChatHeader({
   files,
 }: ChatHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
     <>
       <header className="flex w-full items-center pt-2 px-3">
@@ -45,7 +46,13 @@ export default function ChatHeader({
 
         <div className="flex flex-1 overflow-auto">
           <div className="flex items-center justify-between w-full">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => {
+                console.log('value', value);
+                setActiveTab(value);
+              }}
+            >
               <TabsList className="grid grid-cols-2">
                 <TabsTrigger
                   value="code"

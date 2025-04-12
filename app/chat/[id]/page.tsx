@@ -1,9 +1,8 @@
 'use server';
 
-import Chat from '@/components/chat';
+import IDE from '@/components/chat/ide';
 import { createClient } from '@/lib/supabase/server';
-import { TChatMessage, TFile, TProject } from '@/types/project';
-import React, { Suspense } from 'react';
+import { TChatMessage, TProject } from '@/types/project';
 
 export async function getProjectWithFiles(projectId: string): Promise<{
   project: TProject;
@@ -40,14 +39,9 @@ export default async function page({ params }: { params: { id: string } }) {
   }
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-full items-center justify-center">
-          Loading...
-        </div>
-      }
-    >
-      <Chat {...data} />
-    </Suspense>
+    <>
+      <IDE {...data} />
+      {/* <Chat {...data} /> */}
+    </>
   );
 }

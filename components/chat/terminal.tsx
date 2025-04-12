@@ -1,21 +1,19 @@
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { TerminalSquare } from 'lucide-react';
-import { Terminal, TypingAnimation } from './magicui/terminal';
+import { Terminal, TypingAnimation } from '../magicui/terminal';
 import { TerminalOutput } from './chat';
 import { cn } from '@/lib/utils';
 
 interface EditorTerminalProps {
   showTerminal: boolean;
   setShowTerminal: (showTerminal: boolean) => void;
-  activeTab: string;
   terminalOutput: TerminalOutput;
 }
 
 export default function EditorTerminal({
   showTerminal,
   setShowTerminal,
-  activeTab,
   terminalOutput,
 }: EditorTerminalProps) {
   return (
@@ -32,9 +30,7 @@ export default function EditorTerminal({
               value="terminal"
               className={cn(
                 'h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-background',
-                activeTab === 'terminal'
-                  ? 'border-primary'
-                  : 'border-transparent'
+                showTerminal ? 'border-primary' : 'border-transparent'
               )}
             >
               <TerminalSquare className="h-4 w-4 mr-2" />

@@ -23,11 +23,9 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { Github, User, Mail, Settings, LogOut } from 'lucide-react';
+import { User, Mail, Settings, LogOut } from 'lucide-react';
 import { createClient } from '../lib/supabase/client';
-import { ShineBorder } from './magicui/shine-border';
 import { redirect } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 

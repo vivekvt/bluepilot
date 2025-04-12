@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useDeploy } from '../hooks/useDeploy';
+import { useDeploy } from '@/hooks/useDeploy';
 
 interface DeployButtonProps {
   projectFiles: FileSystemTree;
