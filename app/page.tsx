@@ -117,7 +117,7 @@ export default function LandingPage() {
               icon: <Sparkles className="h-8 w-8 text-primary" />,
               title: 'AI-Powered',
               description:
-                'Our advanced AI understands your requirements and generates optimized code.',
+                'AI understands your requirements and generates optimized code.',
             },
             {
               icon: <Code className="h-8 w-8 text-primary" />,
