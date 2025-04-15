@@ -17,7 +17,7 @@ export default function EditorTerminal({
   terminalOutput,
 }: EditorTerminalProps) {
   return (
-    <div className="border-t bg-background">
+    <div className="border-t bg-muted/40">
       <Tabs
         value={showTerminal ? 'terminal' : ''}
         // onValueChange={() => setShowTerminal(!showTerminal)}

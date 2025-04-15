@@ -107,35 +107,33 @@ export default function Editor({
   setFiles: (files: any) => void;
 }) {
   return (
-    <div className="flex-1 overflow-hidden relative">
-      <div className="absolute inset-0">
-        {selectedFile && (
-          <div className="flex items-center px-4 py-1 text-xs text-muted-foreground border-b py-2">
-            <span>{selectedFile.path}</span>
-          </div>
-        )}
-        {selectedFile && (
-          <div className="h-[calc(100%-25px)]">
-            <EditorChild
-              value={selectedFile.content || ''}
-              language={getLanguageForFile(selectedFile.path)}
-              onChange={(value) => {
-                if (selectedFile) {
-                  // Update the file content in the WebContainer file structure
-                  setSelectedFile({
-                    ...selectedFile,
-                    content: value || '',
-                  });
+    <div className="flex-1 overflow-hidden bg-muted/80">
+      {selectedFile && (
+        <div className="flex items-center px-4 text-xs border-b py-2 bg-muted/30">
+          <span>{selectedFile.path}</span>
+        </div>
+      )}
+      {selectedFile && (
+        <div className="h-[calc(100%-25px)]">
+          <EditorChild
+            value={selectedFile.content || ''}
+            language={getLanguageForFile(selectedFile.path)}
+            onChange={(value) => {
+              if (selectedFile) {
+                // Update the file content in the WebContainer file structure
+                setSelectedFile({
+                  ...selectedFile,
+                  content: value || '',
+                });
 
-                  setFiles((prev: FileSystemTree) =>
-                    updateFileTree(prev, selectedFile.path, 'update', value)
-                  );
-                }
-              }}
-            />
-          </div>
-        )}
-      </div>
+                setFiles((prev: FileSystemTree) =>
+                  updateFileTree(prev, selectedFile.path, 'update', value)
+                );
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

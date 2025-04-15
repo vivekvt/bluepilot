@@ -40,7 +40,7 @@ export function BrowserNavbar() {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <div className="flex w-full flex-col border-b bg-background shadow-sm">
+    <div className="flex w-full flex-col border-b bg-muted/40 shadow-sm">
       {/* Navigation Bar */}
       <div className="flex items-center gap-1 p-1">
         <div className="flex items-center gap-1">
@@ -103,7 +103,7 @@ export function BrowserNavbar() {
           <Input
             type="url"
             value={url}
-            className="h-8 bg-muted/50 pl-8 pr-20"
+            className="h-8 bg-background pl-8 pr-20"
             placeholder="Search or enter website name"
           />
         </div>

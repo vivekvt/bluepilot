@@ -1,12 +1,22 @@
 'use client';
 
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileCode, Terminal, Send, ChevronDown } from 'lucide-react';
+import {
+  FileCode,
+  Terminal,
+  Send,
+  ChevronDown,
+  Paperclip,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TChatMessage, TProject } from '@/types/project';
 import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { appConfig } from '@/lib/config';
+import { ShineBorder } from '../magicui/shine-border';
 
 interface ChatPanelProps {
   messages: TChatMessage[];
@@ -27,6 +37,12 @@ export default function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -173,28 +189,48 @@ export default function ChatPanel({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <form onSubmit={handleSubmit}>
-        <div className="relative flex items-center">
-          <input
-            type="text"
+      <form onSubmit={handleSubmit} className="relative">
+        <div className="relative rounded-lg border overflow-hidden">
+          {(isGenerating || loading) && (
+            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+          )}
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Blue Pilot anything..."
-            className="w-full px-4 py-3 bg-muted/30 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+            placeholder={`Ask ${appConfig?.title} anything...`}
+            className="min-h-[80px] resize-none py-3 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
           />
-          <button
-            type="submit"
-            disabled={!input.trim() || isGenerating || loading}
-            className={cn(
-              'absolute right-3 p-1.5 rounded-md',
-              input.trim() && !(isGenerating && loading)
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            )}
-          >
-            <Send size={16} />
-          </button>
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+            <input
+              type="file"
+              ref={fileInputRef}
+              // onChange={handleFileChange}
+              className="hidden"
+              multiple
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full"
+              disabled
+              onClick={handleFileClick}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isGenerating || loading || !input.trim()}
+              className="h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors"
+            >
+              {isGenerating || loading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <Send className="h-4 w-4 text-white" />
+              )}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

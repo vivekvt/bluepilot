@@ -83,11 +83,11 @@ export default function Chat(props: IChatProps) {
       await webContainer.mount(props.project?.files);
       await runCommand('npm', ['install']);
       setIsGenerating(false);
-      if (!(props?.messages?.length > 1)) {
-        await startChat([
-          { role: PromptRole.User, content: props.project.prompt },
-        ]);
-      }
+      // if (!(props?.messages?.length > 1)) {
+      //   await startChat([
+      //     { role: PromptRole.User, content: props.project.prompt },
+      //   ]);
+      // }
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -439,7 +439,7 @@ export default function Chat(props: IChatProps) {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/4 pl-2 pb-2 pt-2">
+        <div className="w-1/4 pl-2 pb-3 pt-2">
           <ChatPanel
             project={props.project}
             messages={messages}
@@ -448,7 +448,7 @@ export default function Chat(props: IChatProps) {
           />
         </div>
         {/* Right side - Code and Preview */}
-        <div className="flex-1 flex flex-col overflow-hidden p-2">
+        <div className="flex-1 flex flex-col overflow-hidden p-3">
           <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
             {isGenerating && (
               <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
@@ -457,9 +457,8 @@ export default function Chat(props: IChatProps) {
             {/* Code Editor or Preview */}
             <div className="flex-1 overflow-hidden">
               {activeTab === 'code' ? (
-                <div className="flex h-full">
-                  {/* File explorer */}
-                  <div className="w-50 border-r overflow-auto bg-muted/30">
+                <div className="flex h-full w-full">
+                  <div className="w-1/6 border-r overflow-auto bg-muted/40">
                     <div className="p-1">
                       <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                         FILES
@@ -481,8 +480,6 @@ export default function Chat(props: IChatProps) {
                       </div>
                     </div>
                   </div>
-
-                  {/* Code editor */}
                   <Editor
                     setFiles={setFiles}
                     selectedFile={selectedFile}
@@ -502,7 +499,7 @@ export default function Chat(props: IChatProps) {
                       allowFullScreen
                     />
                   ) : (
-                    <div className="flex h-full w-full ">
+                    <div className="flex h-full w-full bg-muted/40">
                       <div className="flex-1 flex items-center justify-center">
                         <div className="text-center">
                           <div className="mb-6">
