@@ -27,8 +27,9 @@ export async function getProjectWithFiles(projectId: string): Promise<{
   return { project, messages };
 }
 
-export default async function page({ params }: { params: { id: string } }) {
-  const data = await getProjectWithFiles(params?.id);
+export default async function page({ params }: any) {
+  const { id } = await params;
+  const data = await getProjectWithFiles(id);
 
   if (!data?.project?.id) {
     return (
@@ -41,7 +42,6 @@ export default async function page({ params }: { params: { id: string } }) {
   return (
     <>
       <IDE {...data} />
-      {/* <Chat {...data} /> */}
     </>
   );
 }

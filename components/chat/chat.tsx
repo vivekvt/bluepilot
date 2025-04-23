@@ -14,7 +14,6 @@ import ChatPanel from './chat-pannel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
-import { log } from 'console';
 import { BrowserNavbar } from './browser-navbar';
 
 interface LLMPrompt {
@@ -55,8 +54,6 @@ export default function Chat(props: IChatProps) {
   const [selectedFile, setSelectedFile] = useState<SelectedFileInfo | null>(
     null
   );
-  // const { startCloning, isCloning, cloneSelectedFile, clonedFiles } =
-  //   useSequentialFileClone();
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('code');
@@ -83,11 +80,11 @@ export default function Chat(props: IChatProps) {
       await webContainer.mount(props.project?.files);
       await runCommand('npm', ['install']);
       setIsGenerating(false);
-      // if (!(props?.messages?.length > 1)) {
-      //   await startChat([
-      //     { role: PromptRole.User, content: props.project.prompt },
-      //   ]);
-      // }
+      if (!(props?.messages?.length > 1)) {
+        await startChat([
+          { role: PromptRole.User, content: props.project.prompt },
+        ]);
+      }
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -124,16 +121,6 @@ export default function Chat(props: IChatProps) {
 
   useEffect(() => {
     const processSteps = async () => {
-      if (
-        !isProcessing &&
-        !isGenerating &&
-        pendingSteps.length === 0 &&
-        processedStepIds?.size > 0
-      ) {
-        console.log('Run dev server');
-        await startDevServer();
-      }
-
       if (isProcessing || pendingSteps.length === 0) {
         return;
       }
@@ -152,7 +139,7 @@ export default function Chat(props: IChatProps) {
         }
 
         console.log(`Processing ${newSteps.length} steps`);
-        await applyLLMSteps(newSteps);
+        await processLLMSteps(newSteps);
 
         // Update processed steps
         const updatedProcessedIds = new Set(processedStepIds);
@@ -214,7 +201,7 @@ export default function Chat(props: IChatProps) {
         }
       }
 
-      console.log('Completed reading stream');
+      await startDevServer();
       setIsGenerating(false);
 
       // await saveMessageToDB('assistant', data?.steps);
@@ -270,7 +257,7 @@ export default function Chat(props: IChatProps) {
     return { ...tree };
   };
 
-  async function applyLLMSteps(steps: IStep[]) {
+  async function processLLMSteps(steps: IStep[]) {
     if (!webContainer) return;
 
     // Helper function to update the FileSystemTree recursively

@@ -24,7 +24,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
-import { User, Mail, Settings, LogOut } from 'lucide-react';
+import { User, Mail, Settings, LogOut, Folder } from 'lucide-react';
 import { createClient } from '../lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -40,7 +40,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="container flex items-center justify-between py-3">
+    <header className="container flex items-center justify-between py-2">
       <div className="flex items-center gap-2">
         <h1 className="text-xl font-bold">
           <Link href="/">{appConfig.title}</Link>
@@ -48,7 +48,6 @@ export default function Navbar() {
       </div>
       <nav className="flex items-center gap-2">
         <ThemeToggle />
-
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -59,9 +58,21 @@ export default function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <Mail /> {user.email}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/projects">
+                  <Folder />
+                  Projects
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings />
