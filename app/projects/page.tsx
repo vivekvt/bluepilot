@@ -1,3 +1,5 @@
+'use server';
+
 import Navbar from '@/components/navbar';
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
@@ -15,27 +17,66 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import DeleteProject from '@/components/project-menu';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProjectMenu from '@/components/project-menu';
 
 dayjs.extend(localizedFormat);
 
-export async function getProjects(): Promise<TProject[]> {
+interface GetProjectsOptions {
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getProjects({
+  page = 1,
+  pageSize = 9,
+}: GetProjectsOptions = {}): Promise<{
+  projects: TProject[];
+  total: number;
+}> {
   const supabase = await createClient();
+
+  // Get count of all projects
+  const { count, error: countError } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) throw countError;
+
+  // Calculate pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Get projects with pagination
   const { data: projects, error: projectError } = await supabase
     .from('projects')
-    .select(`*, messages(count)`);
+    .select(`*, messages(count)`)
+    .range(from, to)
+    .order('updated_at', { ascending: false });
 
   if (projectError) throw projectError;
 
-  return projects;
+  return {
+    projects: projects || [],
+    total: count || 0,
+  };
 }
 
-export default async function page() {
-  const projects = await getProjects();
+export default async function Page({ searchParams }: any) {
+  const params = await searchParams;
+  const currentPage = params?.page ? parseInt(params?.page) : 1;
+  const pageSize = 10; // Number of projects per page
+
+  const { projects, total } = await getProjects({
+    page: currentPage,
+    pageSize,
+  });
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div>
+    <div className="pb-5">
       <Navbar />
       <div className="container">
         <Breadcrumb className="mb-3">
@@ -49,10 +90,11 @@ export default async function page() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
             <Card className="p-0 bg-muted/20" key={project?.id}>
-              <Link href={`/chat/${project?.id}`} prefetch={false}>
+              <Link href={`/projects/${project?.id}`} prefetch={false}>
                 <CardContent className="p-3 pl-4 pb-2">
                   <Sparkles />
                   <p className="text-md">{project?.title}</p>
@@ -74,6 +116,74 @@ export default async function page() {
             </Card>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center mt-8 gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={currentPage <= 1}
+              asChild={currentPage > 1}
+            >
+              {currentPage <= 1 ? (
+                <>
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </>
+              ) : (
+                <Link href={`/projects?page=${currentPage - 1}`}>
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </Link>
+              )}
+            </Button>
+
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (pageNum) => (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-8 h-8"
+                    asChild
+                  >
+                    <Link href={`/projects?page=${pageNum}`}>{pageNum}</Link>
+                  </Button>
+                )
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              disabled={currentPage >= totalPages}
+              asChild={currentPage < totalPages}
+              size="sm"
+            >
+              {currentPage >= totalPages ? (
+                <>
+                  Next <ChevronRight />
+                </>
+              ) : (
+                <Link href={`/projects?page=${currentPage + 1}`}>
+                  Next <ChevronRight />
+                </Link>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* {projects.length > 0 && (
+          <div className="text-center text-sm text-muted-foreground mt-4">
+            Showing {(currentPage - 1) * pageSize + 1} to{' '}
+            {Math.min(currentPage * pageSize, total)} of {total} projects
+          </div>
+        )} */}
+
+        {projects.length === 0 && (
+          <div className="text-center text-muted-foreground py-12">
+            No projects found.
+          </div>
+        )}
       </div>
     </div>
   );

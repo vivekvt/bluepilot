@@ -91,7 +91,7 @@ export default function ProjectMenu({
   };
 
   const openProject = () => {
-    router.push(`/chat/${projectId}`);
+    router.push(`/projects/${projectId}`);
   };
 
   return (

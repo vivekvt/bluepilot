@@ -51,7 +51,7 @@ export default function LandingPage() {
       if (!data?.project?.id) {
         throw new Error('Project creation failed');
       }
-      router.push(`/chat/${data?.project?.id}`);
+      router.push(`/projects/${data?.project?.id}`);
     } catch (error) {
       setLoading(false);
       alert('Project creation failed. Please try again.');
