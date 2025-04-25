@@ -14,7 +14,7 @@ import ChatPanel from './chat-pannel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
-import { BrowserNavbar } from './browser-navbar';
+import { BrowserPreview } from './browser-navbar';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -56,7 +56,7 @@ export default function Chat(props: IChatProps) {
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState('code');
+  const [activeTab, setActiveTab] = useState('preview');
   const [inputValue, setInputValue] = useState('');
   const [url, setUrl] = useState('');
   const [showTerminal, setShowTerminal] = useState(false);
@@ -70,8 +70,6 @@ export default function Chat(props: IChatProps) {
     new Set()
   );
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const { onDownload } = useDownload();
 
   const init = async () => {
     try {
@@ -420,7 +418,6 @@ export default function Chat(props: IChatProps) {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         files={files}
-        onDownload={onDownload}
         isGenerating={isGenerating}
       />
 
@@ -475,42 +472,7 @@ export default function Chat(props: IChatProps) {
                   />
                 </div>
               ) : (
-                <div className="h-full w-full">
-                  {/* Preview */}
-                  <BrowserNavbar />
-                  {url ? (
-                    <iframe
-                      className="h-full w-full border-none m-0 p-0"
-                      src={url}
-                      frameBorder="0"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="flex h-full w-full bg-muted/40">
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="mb-6">
-                            <div className="inline-block relative w-16 h-16">
-                              <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          </div>
-                          <h2 className="text-xl font-semibold text-blue-400 mb-2">
-                            Loading Preview
-                            <span className="text-blue-300">...</span>
-                          </h2>
-                          <div className="mt-6 w-64 mx-auto">
-                            <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-500 rounded-full animate-pulse-subtle origin-left"
-                                style={{ width: '80%' }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <BrowserPreview url={url} />
               )}
             </div>
 

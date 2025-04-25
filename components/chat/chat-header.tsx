@@ -7,12 +7,12 @@ import { FileSystemTree } from '@webcontainer/api';
 import Sidebar from './sidebar';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
+import { useDownload } from '@/hooks/useDownload';
 
 interface ChatHeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isGenerating: boolean;
-  onDownload: (files: FileSystemTree) => void;
   files: FileSystemTree;
 }
 
@@ -20,10 +20,10 @@ export default function ChatHeader({
   activeTab,
   setActiveTab,
   isGenerating,
-  onDownload,
   files,
 }: ChatHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { onDownload } = useDownload();
 
   return (
     <>

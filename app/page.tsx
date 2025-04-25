@@ -28,6 +28,7 @@ export default function LandingPage() {
       if (!user) {
         alert('Please log in to create a project.');
         router.push(`/auth`);
+        return;
       }
 
       const supabase = createClient();
