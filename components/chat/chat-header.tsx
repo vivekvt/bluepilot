@@ -28,7 +28,7 @@ export default function ChatHeader({
   return (
     <>
       <header className="flex w-full items-center pt-2 px-3">
-        <div className="w-1/4  overflow-auto flex items-center gap-1 justify-between">
+        <div className="md:w-1/4 overflow-auto flex items-center gap-1 justify-between">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -38,28 +38,29 @@ export default function ChatHeader({
             >
               <Menu />
             </Button>
-            <Link href="/" className="hidden md:block">
+            <Link href="/">
               <h1 className="text-lg font-semibold">{appConfig.title}</h1>
             </Link>
           </div>
         </div>
 
         <div className="flex flex-1 overflow-auto">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-end md:justify-between w-full">
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value)}
+              className="hidden md:flex"
             >
               <TabsList className="grid grid-cols-3 md:grid-cols-2">
                 <TabsTrigger
                   value="chat"
-                  className={
+                  className={`md:hidden ${
                     activeTab === 'chat'
                       ? 'border-primary'
                       : 'border-transparent'
-                  }
+                  }`}
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <MessageSquare className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Chat</span>
                 </TabsTrigger>
                 <TabsTrigger
@@ -70,7 +71,7 @@ export default function ChatHeader({
                       : 'border-transparent'
                   }
                 >
-                  <Code className="h-4 w-4 mr-2" />
+                  <Code className="h-4 w-4  sm:mr-2" />
                   <span className="hidden sm:inline">Code</span>
                 </TabsTrigger>
                 <TabsTrigger
@@ -83,9 +84,9 @@ export default function ChatHeader({
                   }
                 >
                   {isGenerating ? (
-                    <Loader className="animate-spin h-4 w-4 mr-2" />
+                    <Loader className="animate-spin h-4 w-4  sm:mr-2" />
                   ) : (
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Eye className="h-4 w-4  sm:mr-2" />
                   )}
                   <span className="hidden sm:inline">Preview</span>
                 </TabsTrigger>

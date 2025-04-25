@@ -41,11 +41,9 @@ export default function Navbar() {
 
   return (
     <header className="container flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
-        <h1 className="text-xl font-bold">
-          <Link href="/">{appConfig.title}</Link>
-        </h1>
-      </div>
+      <h1 className="text-xl font-bold">
+        <Link href="/">{appConfig.title}</Link>
+      </h1>
       <nav className="flex items-center gap-2">
         <ThemeToggle />
         {user ? (

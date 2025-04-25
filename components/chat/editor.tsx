@@ -5,6 +5,8 @@ import MonacoEditor from '@monaco-editor/react';
 import { cn } from '@/lib/utils';
 import { SelectedFileInfo } from './chat';
 import { FileSystemTree } from '@webcontainer/api';
+import { X } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface EditorProps {
   value: string;
@@ -97,7 +99,7 @@ export default function Editor({
   setFiles,
 }: {
   selectedFile: SelectedFileInfo | null;
-  setSelectedFile: (file: SelectedFileInfo) => void;
+  setSelectedFile: (file: SelectedFileInfo | null) => void;
   updateFileTree: (
     files: any,
     path: string,
@@ -109,8 +111,15 @@ export default function Editor({
   return (
     <div className="flex-1 overflow-hidden bg-muted/80">
       {selectedFile && (
-        <div className="flex items-center px-4 text-xs border-b py-2 bg-muted/30">
+        <div className="flex items-center pl-4 text-xs border-b py-0 bg-muted/30 justify-between">
           <span>{selectedFile.path}</span>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setSelectedFile(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       )}
       {selectedFile && (

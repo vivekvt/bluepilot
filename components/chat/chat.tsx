@@ -14,6 +14,8 @@ import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 import { BrowserPreview } from './browser-preview';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { Code, Download, Eye, Loader, Menu, MessageSquare } from 'lucide-react';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -90,7 +92,7 @@ export default function Chat(props: IChatProps) {
 
   useEffect(() => {
     if (webContainer) {
-      // init();
+      init();
     }
   }, [webContainer]);
 
@@ -452,26 +454,27 @@ export default function Chat(props: IChatProps) {
             <div className="flex-1 overflow-hidden">
               {activeTab === 'code' ? (
                 <div className="flex h-full w-full">
-                  <div className="w-1/6 border-r overflow-auto bg-muted/40">
-                    <div className="p-1">
-                      <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
-                        FILES
-                      </div>
-                      <div>
-                        {Object.entries(files).map(([name, entry]) => (
-                          <FileTree
-                            key={name}
-                            name={name}
-                            path={name}
-                            entry={entry}
-                            onFileClick={(path, content) => {
-                              setSelectedFile({ path, content });
-                            }}
-                            selectedPath={selectedFile?.path || ''}
-                            // isUpdatingFile={isCloning}
-                          />
-                        ))}
-                      </div>
+                  <div
+                    className={`${
+                      selectedFile?.path ? 'hidden md:block' : ''
+                    } w-full md:w-1/5 border-r overflow-auto bg-muted/40 p-1`}
+                  >
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
+                      FILES
+                    </div>
+                    <div>
+                      {Object.entries(files).map(([name, entry]) => (
+                        <FileTree
+                          key={name}
+                          name={name}
+                          path={name}
+                          entry={entry}
+                          onFileClick={(path, content) =>
+                            setSelectedFile({ path, content })
+                          }
+                          selectedPath={selectedFile?.path || ''}
+                        />
+                      ))}
                     </div>
                   </div>
                   <Editor
@@ -495,6 +498,50 @@ export default function Chat(props: IChatProps) {
             )}
           </div>
         </div>
+      </div>
+      <div className="pb-3 px-2 md:hidden flex">
+        <Tabs
+          className="m-auto"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value)}
+        >
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger
+              value="chat"
+              className={`md:hidden ${
+                activeTab === 'chat' ? 'border-primary' : 'border-transparent'
+              }`}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              <span className="">Chat</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="code"
+              className={
+                activeTab === 'code' ? 'border-primary' : 'border-transparent'
+              }
+            >
+              <Code className="h-4 w-4 mr-2" />
+              <span className="">Code</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="preview"
+              disabled={isGenerating}
+              className={
+                activeTab === 'preview'
+                  ? 'border-primary'
+                  : 'border-transparent'
+              }
+            >
+              {isGenerating ? (
+                <Loader className="animate-spin h-4 w-4 mr-2" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
+              <span className="">Preview</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
     </div>
   );
