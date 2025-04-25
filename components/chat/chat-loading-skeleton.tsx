@@ -1,14 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Menu,
-  Code,
-  Eye,
-  Terminal,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const ChatLoadingSkeleton = () => {
   const [loadingText, setLoadingText] = useState('Setting up environment');
@@ -42,7 +34,7 @@ const ChatLoadingSkeleton = () => {
   }, []);
 
   return (
-    <div className="flex h-screen w-full ">
+    <div className="flex h-screen w-full p-4">
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="mb-6">

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { cn } from '@/lib/utils';
-import { SelectedFileInfo } from './chat';
+import { SelectedFileInfo } from './project';
 import { FileSystemTree } from '@webcontainer/api';
 import { X } from 'lucide-react';
 import { Button } from '../ui/button';

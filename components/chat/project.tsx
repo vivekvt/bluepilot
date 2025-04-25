@@ -45,7 +45,7 @@ export interface TerminalOutput {
 
 const supabase = createClient();
 
-export default function Chat(props: IChatProps) {
+export default function Project(props: IChatProps) {
   const { webContainer, runCommand } = useWebContainer();
 
   const [files, setFiles] = useState<FileSystemTree>(
@@ -57,7 +57,7 @@ export default function Chat(props: IChatProps) {
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState('code');
+  const [activeTab, setActiveTab] = useState('chat');
   const [inputValue, setInputValue] = useState('');
   const [url, setUrl] = useState('');
   const [showTerminal, setShowTerminal] = useState(false);
@@ -457,7 +457,7 @@ export default function Chat(props: IChatProps) {
                   <div
                     className={`${
                       selectedFile?.path ? 'hidden md:block' : ''
-                    } w-full md:w-1/5 border-r overflow-auto bg-muted/40 p-1`}
+                    } md:w-1/5 border-r overflow-auto bg-muted/40 p-1`}
                   >
                     <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       FILES

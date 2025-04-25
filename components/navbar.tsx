@@ -28,6 +28,7 @@ import { User, Mail, Settings, LogOut, Folder } from 'lucide-react';
 import { createClient } from '../lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import Sidebar from './sidebar';
 
 export default function Navbar() {
   const { user, setUser } = useAuth();
@@ -40,7 +41,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="container flex items-center justify-between py-2">
+    <header className="container flex items-center justify-between py-3">
       <h1 className="text-xl font-bold">
         <Link href="/">{appConfig.title}</Link>
       </h1>
@@ -49,10 +50,7 @@ export default function Navbar() {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <User />
-                Profile
-              </Button>
+              <Sidebar />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>

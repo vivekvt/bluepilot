@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { TerminalSquare } from 'lucide-react';
 import { Terminal, TypingAnimation } from '../magicui/terminal';
-import { TerminalOutput } from './chat';
+import { TerminalOutput } from './project';
 import { cn } from '@/lib/utils';
 
 interface EditorTerminalProps {

@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { IChatProps } from './chat';
+import { IChatProps } from './project';
 import ChatLoadingSkeleton from './chat-loading-skeleton';
 
 // Dynamic import with Next.js
-const Chat = dynamic(() => import('./chat'), {
+const Chat = dynamic(() => import('./project'), {
   loading: () => <ChatLoadingSkeleton />,
   // Disable SSR for client-only components if needed
   ssr: false,
