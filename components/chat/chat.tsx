@@ -6,7 +6,6 @@ import { apiClient } from '@/lib/utils/apiClient';
 import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { ShineBorder } from '@/components/magicui/shine-border';
-import { useDownload } from '@/hooks/useDownload';
 import { TChatMessage, TProject } from '@/types/project';
 import { createClient } from '@/lib/supabase/client';
 import { IStep } from '@/types/steps';
@@ -14,7 +13,7 @@ import ChatPanel from './chat-pannel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
-import { BrowserPreview } from './browser-navbar';
+import { BrowserPreview } from './browser-preview';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -56,7 +55,7 @@ export default function Chat(props: IChatProps) {
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState('preview');
+  const [activeTab, setActiveTab] = useState('code');
   const [inputValue, setInputValue] = useState('');
   const [url, setUrl] = useState('');
   const [showTerminal, setShowTerminal] = useState(false);
@@ -91,7 +90,7 @@ export default function Chat(props: IChatProps) {
 
   useEffect(() => {
     if (webContainer) {
-      init();
+      // init();
     }
   }, [webContainer]);
 
@@ -423,7 +422,13 @@ export default function Chat(props: IChatProps) {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/4 pl-2 pb-3 pt-2">
+        <div
+          className={`pl-2 pb-3 pt-2 pr-2 md:pr-0 ${
+            activeTab === 'chat'
+              ? 'w-full md:w-1/4'
+              : 'hidden md:block md:w-1/4'
+          }`}
+        >
           <ChatPanel
             project={props.project}
             messages={messages}
@@ -431,8 +436,13 @@ export default function Chat(props: IChatProps) {
             isGenerating={isGenerating}
           />
         </div>
+
         {/* Right side - Code and Preview */}
-        <div className="flex-1 flex flex-col overflow-hidden p-3">
+        <div
+          className={`flex-1 flex flex-col overflow-hidden p-3 ${
+            activeTab === 'chat' ? 'hidden md:flex' : 'flex'
+          }`}
+        >
           <div className="relative flex-1 flex flex-col overflow-hidden border rounded-lg">
             {isGenerating && (
               <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />

@@ -82,7 +82,7 @@ export function DeployButton({
       <DialogTrigger asChild>
         <Button size="sm" className={className}>
           <Rocket className="h-3 w-3" />
-          {buttonText}
+          <span className="hidden sm:inline">{buttonText}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

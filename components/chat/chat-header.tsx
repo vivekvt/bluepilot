@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Code, Download, Eye, Loader, Menu } from 'lucide-react';
+import { Code, Download, Eye, Loader, Menu, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { appConfig } from '@/lib/config';
 import { DeployButton } from './deploy-button';
@@ -38,7 +38,7 @@ export default function ChatHeader({
             >
               <Menu />
             </Button>
-            <Link href="/">
+            <Link href="/" className="hidden md:block">
               <h1 className="text-lg font-semibold">{appConfig.title}</h1>
             </Link>
           </div>
@@ -48,12 +48,20 @@ export default function ChatHeader({
           <div className="flex items-center justify-between w-full">
             <Tabs
               value={activeTab}
-              onValueChange={(value) => {
-                console.log('value', value);
-                setActiveTab(value);
-              }}
+              onValueChange={(value) => setActiveTab(value)}
             >
-              <TabsList className="grid grid-cols-2">
+              <TabsList className="grid grid-cols-3 md:grid-cols-2">
+                <TabsTrigger
+                  value="chat"
+                  className={
+                    activeTab === 'chat'
+                      ? 'border-primary'
+                      : 'border-transparent'
+                  }
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Chat</span>
+                </TabsTrigger>
                 <TabsTrigger
                   value="code"
                   className={
@@ -63,7 +71,7 @@ export default function ChatHeader({
                   }
                 >
                   <Code className="h-4 w-4 mr-2" />
-                  Code
+                  <span className="hidden sm:inline">Code</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="preview"
@@ -79,7 +87,7 @@ export default function ChatHeader({
                   ) : (
                     <Eye className="h-4 w-4 mr-2" />
                   )}
-                  Preview
+                  <span className="hidden sm:inline">Preview</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -93,7 +101,7 @@ export default function ChatHeader({
               >
                 <Download className="h-4 w-4" />
               </Button>
-              <DeployButton projectFiles={files} className="gap1" />
+              <DeployButton projectFiles={files} />
             </div>
           </div>
         </div>

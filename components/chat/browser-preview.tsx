@@ -167,7 +167,7 @@ export function BrowserPreview({ url }: BrowserNavbarProps) {
           </TooltipProvider>
         </div>
         <div
-          className={`bg-red-500 flex-1 ${
+          className={`flex-1 ${
             state.mode === 'mobile' ? 'w-80 m-auto' : 'w-full'
           }`}
         >
