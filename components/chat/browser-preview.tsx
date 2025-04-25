@@ -23,14 +23,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-interface Tab {
-  id: string;
-  title: string;
-  url: string;
-  favicon?: string;
-  isActive: boolean;
-}
-
 interface BrowserNavbarProps {
   url: string;
 }
@@ -111,9 +103,9 @@ export function BrowserPreview({ url }: BrowserNavbarProps) {
             </div>
             <Input
               type="url"
-              value={url}
-              className="h-8 bg-background pl-8 pr-20"
-              placeholder="Search or enter website name"
+              className="h-8 bg-background px-8 pr-2"
+              // value={url}
+              // placeholder="Search or enter website name"
             />
           </div>
           <TooltipProvider>

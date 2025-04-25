@@ -1,8 +1,10 @@
 'use server';
 
 import IDE from '@/components/chat/ide';
+import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/server';
 import { TChatMessage, TProject } from '@/types/project';
+import Link from 'next/link';
 
 export async function getProjectWithFiles(projectId: string): Promise<{
   project: TProject;
@@ -33,15 +35,14 @@ export default async function Page({ params }: any) {
 
   if (!data?.project?.id) {
     return (
-      <div className="flex h-screens w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center flex-col gap-4">
         <h1 className="text-2xl font-bold">Project not found</h1>
+        <Link href="/">
+          <Button size="sm">Go Back to Home</Button>
+        </Link>
       </div>
     );
   }
 
-  return (
-    <>
-      <IDE {...data} />
-    </>
-  );
+  return <IDE {...data} />;
 }

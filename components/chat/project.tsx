@@ -15,7 +15,7 @@ import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { Code, Download, Eye, Loader, Menu, MessageSquare } from 'lucide-react';
+import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -449,10 +449,11 @@ export default function Project(props: IChatProps) {
             {isGenerating && (
               <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
             )}
-
             {/* Code Editor or Preview */}
-            <div className="flex-1 overflow-hidden">
-              {activeTab === 'code' ? (
+            {activeTab === 'preview' ? (
+              <BrowserPreview url={url} />
+            ) : (
+              <>
                 <div className="flex h-full w-full">
                   <div
                     className={`${
@@ -484,17 +485,12 @@ export default function Project(props: IChatProps) {
                     updateFileTree={updateFileTree}
                   />
                 </div>
-              ) : (
-                <BrowserPreview url={url} />
-              )}
-            </div>
-
-            {activeTab === 'code' && (
-              <EditorTerminal
-                showTerminal={showTerminal}
-                setShowTerminal={setShowTerminal}
-                terminalOutput={terminalOutput}
-              />
+                <EditorTerminal
+                  showTerminal={showTerminal}
+                  setShowTerminal={setShowTerminal}
+                  terminalOutput={terminalOutput}
+                />
+              </>
             )}
           </div>
         </div>
@@ -506,33 +502,15 @@ export default function Project(props: IChatProps) {
           onValueChange={(value) => setActiveTab(value)}
         >
           <TabsList className="grid grid-cols-3">
-            <TabsTrigger
-              value="chat"
-              className={`md:hidden ${
-                activeTab === 'chat' ? 'border-primary' : 'border-transparent'
-              }`}
-            >
+            <TabsTrigger value="chat">
               <MessageSquare className="h-4 w-4 mr-2" />
               <span className="">Chat</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="code"
-              className={
-                activeTab === 'code' ? 'border-primary' : 'border-transparent'
-              }
-            >
+            <TabsTrigger value="code">
               <Code className="h-4 w-4 mr-2" />
               <span className="">Code</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="preview"
-              disabled={isGenerating}
-              className={
-                activeTab === 'preview'
-                  ? 'border-primary'
-                  : 'border-transparent'
-              }
-            >
+            <TabsTrigger value="preview" disabled={isGenerating}>
               {isGenerating ? (
                 <Loader className="animate-spin h-4 w-4 mr-2" />
               ) : (

@@ -8,7 +8,6 @@ import {
   Send,
   ChevronDown,
   Paperclip,
-  X,
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -99,16 +98,10 @@ export default function ChatPanel({
               <div className="flex-1 space-y-1">
                 {/* Timestamp */}
                 <div className="text-xs text-gray-500 flex items-center gap-2">
-                  {message.role === 'user' ? 'You' : 'Blue Pilot'}
-
-                  {/* <div className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {formatDate(message.created_at)}
-                  </div> */}
+                  {message.role === 'user' ? 'You' : appConfig?.title}
                 </div>
 
-                {/* Message Text */}
-                <div className="text-gray-100 text-sm">
+                <div className="text-sm">
                   {message.text}
                   {/* <Markdown className="prose prose-invert prose-sm max-w-none">
                     {message.text}
@@ -129,7 +122,6 @@ export default function ChatPanel({
                             transition={{ duration: 0.2 }}
                             className="rounded-md overflow-hidden border"
                           >
-                            {/* Code Header */}
                             <div className="flex items-center justify-between nobg-gray-800 px-3 py-2 bg-gray-800/30">
                               <div className="flex items-center gap-2">
                                 {item.action === 'run' ? (
