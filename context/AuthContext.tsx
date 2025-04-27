@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from '@supabase/supabase-js';
 import {
   createContext,
   useContext,
@@ -7,8 +8,6 @@ import {
   useEffect,
   ReactNode,
 } from 'react';
-
-type User = any;
 
 const AuthContext = createContext<{
   user: User | null;

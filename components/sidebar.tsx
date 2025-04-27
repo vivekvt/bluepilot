@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Folders, User, LogOut, Moon, Sun, Plus, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -32,6 +32,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface SidebarProps {
   side?: 'left' | 'right';
@@ -40,7 +41,6 @@ interface SidebarProps {
 export default function Sidebar({ side = 'right' }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
   const { user, setUser } = useAuth();
   const client = createClient();
@@ -50,11 +50,6 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
     setUser(null);
     redirect('/auth');
   };
-
-  // Prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -77,22 +72,23 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side={side}
-          className="p-0 w-[260px] h-full flex flex-col"
+          className="p-0 w-[260px] h-full flex flex-col overflow-y-scroll"
         >
-          <SheetHeader className="p-4 border-b">
+          <SheetHeader className="p-3 border-b">
             <SheetTitle className="text-left">
               <Link href="/">{appConfig.title}</Link>
             </SheetTitle>
           </SheetHeader>
+
           <div className="flex flex-col flex-1">
             <div className="flex flex-col flex-1 px-3 gap-2">
-              <Link href="/" onClick={() => setIsOpen(false)}>
+              <Link href="/new-project" onClick={() => setIsOpen(false)}>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="w-full justify-start"
                 >
-                  <Plus /> New Project
+                  <Plus className="mr-2 h-4 w-4" /> New Project
                 </Button>
               </Link>
               {navigationItems.map((item, index) => (
@@ -106,7 +102,7 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
                     size="sm"
                     className="w-full justify-start"
                   >
-                    {item.icon} {item.label}
+                    <span className="mr-2">{item.icon}</span> {item.label}
                   </Button>
                 </Link>
               ))}
@@ -120,14 +116,10 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
                       size="sm"
                     >
                       <span className="flex items-center gap-2">
-                        {mounted && theme === 'dark' ? (
-                          <Sun className="h-4 w-4" />
-                        ) : (
-                          <Moon className="h-4 w-4" />
-                        )}
-                        {mounted && theme === 'dark'
-                          ? 'Light Mode'
-                          : 'Dark Mode'}
+                        <Sun className="h-4 w-4 hidden dark:inline" />
+                        <Moon className="h-4 w-4 dark:hidden" />
+                        <span className="hidden dark:inline">Light Mode</span>
+                        <span className="dark:hidden">Dark Mode</span>
                       </span>
                     </Button>
                   </TooltipTrigger>
@@ -137,7 +129,34 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="border- mt-auto p-3">
+            <div className="flex flex-col mt-auto p-3 gap-3">
+              {user && (
+                <Link href="/profile">
+                  <div className="cursor-pointer border flex items-center gap-2 hover:bg-muted rounded-lg p-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={user.user_metadata?.avatar_url}
+                        alt={user.user_metadata?.name || user.email || 'User'}
+                      />
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {<User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col overflow-hidden">
+                      {user.user_metadata?.name && (
+                        <p className="font-medium truncate">
+                          {user.user_metadata.name}
+                        </p>
+                      )}
+                      {user.email && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -155,7 +174,7 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
                       Are you sure you want to logout?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      You’ll need to sign in again to access your account.
+                      You'll need to sign in again to access your account.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2">

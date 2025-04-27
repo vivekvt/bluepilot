@@ -3,7 +3,6 @@ import '@/app/globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import type { Metadata } from 'next';
 import { appConfig } from '@/lib/config';
-import Navbar from '@/components/navbar';
 import { getUser } from '@/lib/supabase/helper';
 import { AuthProvider } from '@/context/AuthContext';
 
