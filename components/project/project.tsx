@@ -92,7 +92,7 @@ export default function Project(props: IChatProps) {
 
   useEffect(() => {
     if (webContainer) {
-      // init();
+      init();
     }
   }, [webContainer]);
 

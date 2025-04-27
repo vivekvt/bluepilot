@@ -10,7 +10,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
 import {
   Tooltip,
@@ -71,101 +70,106 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
   ];
 
   return (
-    <Sheet>
-      <SheetTrigger>
-        <Button variant="outline" size="sm">
-          <Menu />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side={side} className="p-0 w-[260px] h-full flex flex-col">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle className="text-left">
-            <Link href="/">{appConfig.title}</Link>
-          </SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-col flex-1">
-          <div className="flex flex-col flex-1 px-3 gap-2">
-            <Link href="/" onClick={() => setIsOpen(false)}>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="w-full justify-start"
-              >
-                <Plus /> New Project
-              </Button>
-            </Link>
-            {navigationItems.map((item, index) => (
-              <Link
-                key={index}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-              >
+    <>
+      <Button variant="outline" size="sm" onClick={() => setIsOpen(!isOpen)}>
+        <Menu />
+      </Button>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side={side}
+          className="p-0 w-[260px] h-full flex flex-col"
+        >
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-left">
+              <Link href="/">{appConfig.title}</Link>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1 px-3 gap-2">
+              <Link href="/" onClick={() => setIsOpen(false)}>
                 <Button
-                  variant="ghost"
                   size="sm"
+                  variant="ghost"
                   className="w-full justify-start"
                 >
-                  {item.icon} {item.label}
+                  <Plus /> New Project
                 </Button>
               </Link>
-            ))}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
+              {navigationItems.map((item, index) => (
+                <Link
+                  key={index}
+                  href={item.href}
+                  onClick={() => setIsOpen(false)}
+                >
                   <Button
                     variant="ghost"
-                    className="w-full justify-start"
-                    onClick={toggleTheme}
                     size="sm"
+                    className="w-full justify-start"
                   >
-                    <span className="flex items-center gap-2">
-                      {mounted && theme === 'dark' ? (
-                        <Sun className="h-4 w-4" />
-                      ) : (
-                        <Moon className="h-4 w-4" />
-                      )}
-                      {mounted && theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    </span>
+                    {item.icon} {item.label}
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle theme</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </Link>
+              ))}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={toggleTheme}
+                      size="sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        {mounted && theme === 'dark' ? (
+                          <Sun className="h-4 w-4" />
+                        ) : (
+                          <Moon className="h-4 w-4" />
+                        )}
+                        {mounted && theme === 'dark'
+                          ? 'Light Mode'
+                          : 'Dark Mode'}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle theme</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="border- mt-auto p-3">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Are you sure you want to logout?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You’ll need to sign in again to access your account.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>
+                      Yes, logout
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
-          <div className="border- mt-auto p-3">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full justify-start"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Are you sure you want to logout?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You’ll need to sign in again to access your account.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="gap-2">
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>
-                    Yes, logout
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

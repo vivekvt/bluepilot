@@ -1,4 +1,3 @@
-// context/AuthContext.tsx
 'use client';
 
 import {
@@ -9,7 +8,7 @@ import {
   ReactNode,
 } from 'react';
 
-type User = any; // Replace with your user type
+type User = any;
 
 const AuthContext = createContext<{
   user: User | null;
