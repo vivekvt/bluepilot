@@ -70,7 +70,7 @@ export default function ChatPanel({
   return (
     <div className={cn('relative flex flex-col h-full w-full', className)}>
       {/* Messages Container */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-start">
         <Button variant="ghost" size="sm">
           {project?.title}
           <ChevronDown />
@@ -156,7 +156,7 @@ export default function ChatPanel({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-gray-400 p-4"
+            className="flex items-center gap-2 p-2"
           >
             <div className="flex space-x-1 mt-1.5">
               <div
@@ -172,8 +172,11 @@ export default function ChatPanel({
                 style={{ animationDelay: '300ms' }}
               />
             </div>
-            <ShimmerText text="Blue Pilot is thinking..." />
-            {/* <span className="text-sm">Blue Pilot is thinking...</span> */}
+            <div className="flex justify-center items-center">
+              <span className="text-blue-500 font-semibold text-md animate-pulse ">
+                {appConfig?.title} is thinking...
+              </span>
+            </div>
           </motion.div>
         )}
 
@@ -228,38 +231,3 @@ export default function ChatPanel({
     </div>
   );
 }
-
-const ShimmerText = ({ text }: { text: string }) => {
-  return (
-    <div className="flex justify-center items-center">
-      <div className="relative">
-        <style jsx>{`
-          @keyframes shimmer {
-            0% {
-              background-position: -200% center;
-            }
-            100% {
-              background-position: 200% center;
-            }
-          }
-
-          .shimmer-effect {
-            background: linear-gradient(
-              90deg,
-              rgba(255, 255, 255, 0.1) 0%,
-              rgba(255, 255, 255, 0.8) 50%,
-              rgba(255, 255, 255, 0.1) 100%
-            );
-            background-size: 200% 100%;
-            animation: shimmer 3s infinite linear;
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-          }
-        `}</style>
-
-        <span className="text-sm font-bold shimmer-effect">{text}</span>
-      </div>
-    </div>
-  );
-};

@@ -1,4 +1,4 @@
-import { Code, Download, Eye, Loader } from 'lucide-react';
+import { Code, Download, Eye, Loader, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { appConfig } from '@/lib/config';
 import { DeployButton } from './deploy-button';
@@ -34,7 +34,6 @@ export default function ChatHeader({
             </Link>
           </div>
         </div>
-
         <div className="flex flex-1 overflow-auto">
           <div className="flex items-center justify-end md:justify-between w-full">
             <Tabs

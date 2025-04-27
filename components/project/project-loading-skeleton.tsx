@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const ChatLoadingSkeleton = () => {
+const ProjectLoadingSkeleton = () => {
   const [loadingText, setLoadingText] = useState('Setting up environment');
   const [dots, setDots] = useState('');
 
@@ -63,4 +63,4 @@ const ChatLoadingSkeleton = () => {
   );
 };
 
-export default ChatLoadingSkeleton;
+export default ProjectLoadingSkeleton;

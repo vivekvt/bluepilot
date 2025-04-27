@@ -60,10 +60,10 @@ export default function ProjectMenu({
       // console.error('Error deleting project:', error);
     } else {
       // console.log('Project deleted successfully');
-      router.refresh();
       if (onProjectDeleted) {
         onProjectDeleted();
       }
+      router.refresh();
     }
     setDeleteDialogOpen(false);
   };
@@ -82,10 +82,10 @@ export default function ProjectMenu({
       // console.error('Error renaming project:', error);
     } else {
       // console.log('Project renamed successfully');
-      router.refresh();
       if (onProjectRenamed) {
         onProjectRenamed(newTitle);
       }
+      router.refresh();
     }
     setRenameDialogOpen(false);
   };
@@ -157,7 +157,7 @@ export default function ProjectMenu({
               project and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteProject}

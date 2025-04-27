@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Editor from '@/components/chat/editor';
+import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
+import Editor from '@/components/project/editor';
 import { apiClient } from '@/lib/utils/apiClient';
 import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
@@ -15,7 +16,6 @@ import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -92,7 +92,7 @@ export default function Project(props: IChatProps) {
 
   useEffect(() => {
     if (webContainer) {
-      init();
+      // init();
     }
   }, [webContainer]);
 

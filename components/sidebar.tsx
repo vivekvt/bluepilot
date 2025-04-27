@@ -155,12 +155,9 @@ export default function Sidebar({ side = 'right' }: SidebarProps) {
                     You’ll need to sign in again to access your account.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
+                <AlertDialogFooter className="gap-2">
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleLogout}
-                    className="text-red-500 bg-red-100 dark:bg-red-500/20 hover:bg-red-200 dark:hover:bg-red-900/20 transition-colors"
-                  >
+                  <AlertDialogAction onClick={handleLogout}>
                     Yes, logout
                   </AlertDialogAction>
                 </AlertDialogFooter>

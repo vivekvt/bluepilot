@@ -133,10 +133,10 @@ export default async function ProfilePage() {
                         You will need to login again to access your account.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="gap-2">
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <form action={handleLogout}>
-                        <AlertDialogAction type="submit">
+                      <form action={handleLogout} className="w-full">
+                        <AlertDialogAction type="submit" className="w-full">
                           Logout
                         </AlertDialogAction>
                       </form>
