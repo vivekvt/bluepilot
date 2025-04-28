@@ -1,7 +1,7 @@
 import { FileSystemTree } from '@webcontainer/api';
 import { IStep } from './steps';
 
-export type TAppTemplate = 'react-vite' | 'node-express';
+export type TAppTemplate = 'react-vite';
 
 export type TProject = {
   id: string;

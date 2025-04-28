@@ -1,4 +1,5 @@
 'use client';
+
 import { Ellipsis } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from './ui/button';
@@ -135,7 +136,7 @@ export default function ProjectMenu({
               className="w-full"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setRenameDialogOpen(false)}
