@@ -88,7 +88,7 @@ export default function LandingPage() {
           <h1 className="text-4xl font-bold tracking-tighter md:text-5xl lg:text-7xl">
             <AuroraText>AI Powered</AuroraText> Website Builder
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Describe your idea. Get a complete, ready-to-deploy website in
             minutes
           </p>
@@ -96,7 +96,7 @@ export default function LandingPage() {
 
         <div className="w-full max-w-2xl">
           <NeonGradientCard>
-            <div className="p-3 bg-background rounded-3xl">
+            <div className="p-3 bg-background rounded-2xl">
               <Input
                 placeholder="Describe the website you want to create..."
                 required
