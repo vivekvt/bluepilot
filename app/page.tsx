@@ -97,14 +97,16 @@ export default function LandingPage() {
         <div className="w-full max-w-2xl">
           <NeonGradientCard>
             <div className="p-3 bg-background rounded-2xl">
-              <Input
+              <textarea
+                rows={2}
+                maxLength={200}
                 placeholder="Describe the website you want to create..."
                 required
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="flex-1 w-full px-2 p-1 border-0 bg-background resize-none focus:outline-none focus:ring-0 focus:ring-offset-0"
               />
+
               <Button
                 disabled={loading}
                 onClick={handleGenerate}

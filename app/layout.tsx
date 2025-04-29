@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: appConfig.title,
   description: appConfig.description,
   icons: {
-    icon: '/favicon32.png',
+    icon: '/favicon-32x32.png',
   },
   openGraph: {
     title: appConfig.title,
