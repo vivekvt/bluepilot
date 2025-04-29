@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
+  ArrowRightIcon,
   Code,
   Heart,
   Loader2,
@@ -19,6 +20,9 @@ import { AnimatedGridPattern } from '@/components/magicui/animated-grid-pattern'
 import Navbar from '@/components/navbar';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { AuroraText } from '@/src/components/magicui/aurora-text';
+import { AnimatedShinyText } from '@/src/components/magicui/animated-shiny-text';
+import { DotPattern } from '@/src/components/magicui/dot-pattern';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -53,20 +57,36 @@ export default function LandingPage() {
   return (
     <div className="relative">
       <Navbar />
-      <AnimatedGridPattern
-        numSquares={0}
-        maxOpacity={0.2}
-        duration={3}
-        repeatDelay={1}
-        className={cn(
-          '[mask-image:radial-gradient(500px_circle_at_center,white,transparent)]',
-          'inset-x-0 h-[100%]'
-        )}
-      />
-      <main className="h-[calc(100vh-56px)] min-h-[500px] flex-1 flex flex-col items-center justify-center container max-w-5xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            AI Powered Website Builder
+      <main className="relative h-[calc(100vh-56px)] min-h-[400px] flex-1 flex flex-col items-center justify-center container max-w-5xl">
+        <AnimatedGridPattern
+          numSquares={0}
+          maxOpacity={0.1}
+          duration={3}
+          repeatDelay={1}
+          className={cn(
+            '[mask-image:radial-gradient(350px_circle_at_center,white,transparent)] opacity-50',
+            'inset-x-0 nh-[100%]'
+          )}
+        />
+        <a
+          href="https://github.com/vivekvt/bluepilot"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <div
+            className={cn(
+              'group rounded-full border border-black/5 bg-neutral-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800 mb-4'
+            )}
+          >
+            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+              <span>✨ Open Source - Star on GitHub</span>
+              <ArrowRightIcon className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+            </AnimatedShinyText>
+          </div>
+        </a>
+        <div className="text-center gap-4 flex flex-col mb-8">
+          <h1 className="text-4xl font-bold tracking-tighter md:text-5xl lg:text-7xl">
+            <AuroraText>AI Powered</AuroraText> Website Builder
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Describe your idea. Get a complete, ready-to-deploy website in
