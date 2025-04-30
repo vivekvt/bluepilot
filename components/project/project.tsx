@@ -16,6 +16,8 @@ import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import ProjectLoadingSkeleton from './project-loading-skeleton';
+import { samplePackageLockJson } from './files';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -57,6 +59,7 @@ export default function Project(props: IChatProps) {
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [projectSetupComplete, setProjectSetupComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [inputValue, setInputValue] = useState('');
   const [url, setUrl] = useState('');
@@ -75,15 +78,29 @@ export default function Project(props: IChatProps) {
   const init = async () => {
     try {
       if (!webContainer) return;
-      setIsGenerating(true);
       await webContainer.mount(props.project?.files);
-      await runCommand('npm', ['install']);
-      setIsGenerating(false);
+      console.log('npm install');
+      const npmInstallPromise = runCommand('npm', ['install']);
+      setProjectSetupComplete(true);
+
       if (!(props?.messages?.length > 1)) {
+        console.log('Starting chat');
         await startChat([
           { role: PromptRole.User, content: props.project.prompt },
         ]);
       }
+
+      setIsGenerating(true);
+      npmInstallPromise
+        .then(() => {
+          console.log('npm install completed, starting dev server');
+          setIsGenerating(false);
+          return startDevServer();
+        })
+        .catch((error) => {
+          console.error('Error during npm install:', error);
+          setIsGenerating(false);
+        });
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -200,15 +217,12 @@ export default function Project(props: IChatProps) {
         }
       }
 
-      await startDevServer();
-      setIsGenerating(false);
+      // await startDevServer();
 
       // await saveMessageToDB('assistant', data?.steps);
       // if (data?.success && data?.steps?.length > 0) {
       //   await applyLLMSteps(data?.steps);
       // }
-
-      // await startDevServer();
 
       setIsGenerating(false);
     } catch (error: any) {
@@ -414,6 +428,11 @@ export default function Project(props: IChatProps) {
 
   return (
     <div className="flex flex-col h-screen relative min-h-800">
+      {!projectSetupComplete && (
+        <div className="fixed top-0 left-0 w-full z-50 bg-background">
+          <ProjectLoadingSkeleton />
+        </div>
+      )}
       {/* Header */}
       <ChatHeader
         activeTab={activeTab}

@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/with-auth';
 import { PromptRole } from '@/types/message';
 import { createClient } from '@/lib/supabase/server';
-import { reactViteTemplate } from '@/lib/utils/template';
 
 const googleLiteModel = google('gemini-2.0-flash-lite');
 
@@ -57,6 +56,14 @@ export const POST = withAuth(async (request: Request) => {
 
   const supabaseClient = await createClient();
 
+  const { data: templateData, error: templateError } = await supabaseClient
+    .from('templates')
+    .select('files')
+    .eq('title', template)
+    .single();
+
+  if (templateError) throw new Error('Failed to get the project template');
+
   const { data, error } = await supabaseClient
     .from('projects')
     .insert([
@@ -64,11 +71,10 @@ export const POST = withAuth(async (request: Request) => {
         title,
         template,
         prompt,
-        files: reactViteTemplate,
+        files: templateData.files, // using files from the fetched template
       },
     ])
     .select();
-
   const project = data?.[0];
 
   if (error || !project?.id) throw new Error('Failed to create project');
@@ -81,7 +87,7 @@ export const POST = withAuth(async (request: Request) => {
     },
   ]);
 
-  if (messageError) throw new Error('Failed to create project');
+  if (messageError) throw new Error('Failed to create message');
 
   return new Response(JSON.stringify({ project: { id: project?.id } }), {
     status: 201,

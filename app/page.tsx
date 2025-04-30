@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { AuroraText } from '@/src/components/magicui/aurora-text';
 import { AnimatedShinyText } from '@/src/components/magicui/animated-shiny-text';
 import { DotPattern } from '@/src/components/magicui/dot-pattern';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -57,7 +58,7 @@ export default function LandingPage() {
   return (
     <div className="relative">
       <Navbar />
-      <main className="relative h-[calc(100vh-56px)] min-h-[400px] flex-1 flex flex-col items-center justify-center container max-w-5xl">
+      <main className="relative h-[calc(100vh-64px)] min-h-[400px] flex-1 flex flex-col items-center justify-center container max-w-5xl">
         <AnimatedGridPattern
           numSquares={0}
           maxOpacity={0.1}

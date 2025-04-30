@@ -156,26 +156,28 @@ export default function ChatPanel({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 p-2"
+            className="p-2 gap-2 flex flex-col"
           >
-            <div className="flex space-x-1 mt-1.5">
-              <div
-                className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
-                style={{ animationDelay: '0ms' }}
-              />
-              <div
-                className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
-                style={{ animationDelay: '150ms' }}
-              />
-              <div
-                className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
-                style={{ animationDelay: '300ms' }}
-              />
-            </div>
-            <div className="flex justify-center items-center">
-              <span className="text-blue-500 font-semibold text-md animate-pulse ">
-                {appConfig?.title} is thinking...
-              </span>
+            <div className="flex items-center gap-2">
+              <div className="flex space-x-1 mt-1.5">
+                <div
+                  className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <div
+                  className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <div
+                  className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
+              </div>
+              <div className="flex justify-center items-center">
+                <span className="text-blue-500 font-semibold text-md animate-pulse ">
+                  {appConfig?.title} is thinking...
+                </span>
+              </div>
             </div>
           </motion.div>
         )}

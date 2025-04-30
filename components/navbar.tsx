@@ -10,12 +10,13 @@ import { createClient } from '../lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from './sidebar';
+import { AuroraText } from '@/src/components/magicui/aurora-text';
 
 export default function Navbar() {
   const { user } = useAuth();
 
   return (
-    <header className="container flex items-center justify-between py-3">
+    <header className="container flex items-center justify-between py-4">
       <h1 className="text-xl font-bold">
         <Link href="/">{appConfig.title}</Link>
       </h1>
