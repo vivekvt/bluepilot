@@ -22,7 +22,6 @@ import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { AuroraText } from '@/src/components/magicui/aurora-text';
 import { AnimatedShinyText } from '@/src/components/magicui/animated-shiny-text';
-import { DotPattern } from '@/src/components/magicui/dot-pattern';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LandingPage() {
@@ -65,7 +64,7 @@ export default function LandingPage() {
           duration={3}
           repeatDelay={1}
           className={cn(
-            '[mask-image:radial-gradient(350px_circle_at_center,white,transparent)] opacity-50',
+            '[mask-image:radial-gradient(350px_circle_at_center,white,transparent)] opacity-60',
             'inset-x-0 nh-[100%]'
           )}
         />
@@ -96,6 +95,7 @@ export default function LandingPage() {
         </div>
 
         <div className="w-full max-w-2xl">
+          {/* <div className="rounded-2xl -translate-x-1 translate-y-1 bg-gradient-to-br from-pink-500 via-cyan-500 to-violet-500 p-0.5"> */}
           <NeonGradientCard>
             <div className="p-3 bg-background rounded-2xl">
               <textarea
@@ -125,6 +125,7 @@ export default function LandingPage() {
               </Button>
             </div>
           </NeonGradientCard>
+          {/* </div> */}
         </div>
       </main>
       <section className="container py-12">

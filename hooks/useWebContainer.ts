@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { WebContainer } from '@webcontainer/api';
 

@@ -1,23 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
 import Editor from '@/components/project/editor';
-import { apiClient } from '@/lib/utils/apiClient';
 import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { ShineBorder } from '@/components/magicui/shine-border';
 import { TChatMessage, TProject } from '@/types/project';
-import { createClient } from '@/lib/supabase/client';
 import { IStep } from '@/types/steps';
-import ChatPanel from './chat-pannel';
+import ChatPanel from './chat-panel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
 import EditorTerminal from './terminal';
 import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import ProjectLoadingSkeleton from './project-loading-skeleton';
-import { samplePackageLockJson } from './files';
+import { stepsSchema } from '@/lib/utils/steps';
+import { z } from 'zod';
+import { useStepsProcessor } from '@/hooks/useStepsProcessor';
+import { useSaveFiles } from '@/hooks/file';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -45,8 +47,6 @@ export interface TerminalOutput {
   output: string[];
 }
 
-const supabase = createClient();
-
 export default function Project(props: IChatProps) {
   const { webContainer, runCommand } = useWebContainer();
 
@@ -58,7 +58,7 @@ export default function Project(props: IChatProps) {
     null
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [customLoading, setIsGenerating] = useState(false);
   const [projectSetupComplete, setProjectSetupComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [inputValue, setInputValue] = useState('');
@@ -69,38 +69,129 @@ export default function Project(props: IChatProps) {
     output: [],
   });
 
-  const [pendingSteps, setPendingSteps] = useState<IStep[]>([]);
-  const [processedStepIds, setProcessedStepIds] = useState<Set<string>>(
-    new Set()
+  const {
+    object: stepsArray,
+    submit,
+    isLoading,
+    stop,
+    error,
+  } = useObject({
+    api: '/api/chat',
+    schema: z.array(stepsSchema),
+  });
+  // useSaveFiles(files, props.project);
+
+  const isGenerating = isLoading || customLoading;
+
+  // Function to process a single step
+  const processStep = async (step: IStep) => {
+    if (!webContainer) return;
+
+    console.log(`Processing step: ${step.action} ${step.path}`);
+
+    switch (step.action) {
+      case 'create': {
+        setSelectedFile({ content: step.content || '', path: step.path });
+        const pathParts = step.path.split('/').filter(Boolean);
+        const dirPath =
+          pathParts.length > 1 ? '/' + pathParts.slice(0, -1).join('/') : '/';
+        if (dirPath !== '/') {
+          await webContainer.fs.mkdir(dirPath, { recursive: true });
+        }
+        if (!step.content) {
+          throw new Error(
+            `Content is required for creating file at ${step.path}`
+          );
+        }
+        await webContainer.fs.writeFile(step.path, step.content, 'utf8');
+        setFiles((prev) =>
+          updateFileTree(prev, step.path, 'create', step.content)
+        );
+        break;
+      }
+      case 'update': {
+        if (!step.content) {
+          throw new Error(
+            `Content is required for updating file at ${step.path}`
+          );
+        }
+
+        setSelectedFile({ content: step.content, path: step.path });
+        await webContainer.fs.writeFile(step.path, step.content, 'utf8');
+        setFiles((prev) =>
+          updateFileTree(prev, step.path, 'update', step.content)
+        );
+        break;
+      }
+      case 'delete': {
+        await webContainer.fs.rm(step.path, { recursive: true, force: true });
+        setFiles((prev) => updateFileTree(prev, step.path, 'delete'));
+        break;
+      }
+      case 'run': {
+        const packageJsonContent = await webContainer.fs.readFile(
+          'package.json',
+          'utf8'
+        );
+        console.log('packageJsonContent', packageJsonContent);
+        const [command, ...args] = step.path.split(' ');
+        await runCommand(command, args);
+
+        const packageJsonContent2 = await webContainer.fs.readFile(
+          'package.json',
+          'utf8'
+        );
+        console.log('packageJsonContent2', packageJsonContent2);
+        setFiles((prev) =>
+          updateFileTree(prev, 'package.json', 'update', 'packageJsonContent')
+        );
+        console.log(files);
+
+        // const packageLockContent = await webContainer.fs.readFile(
+        //   'package-lock.json',
+        //   'utf8'
+        // );
+        // setFiles((prev) =>
+        //   updateFileTree(
+        //     prev,
+        //     'package-lock.json',
+        //     'update',
+        //     packageLockContent
+        //   )
+        // );
+
+        break;
+      }
+      default:
+        throw new Error(`Unknown action: ${step.action}`);
+    }
+
+    console.log(`Completed step: ${step.action} ${step.path}`);
+  };
+
+  // Use our custom hook to process steps
+  const processingStatus = useStepsProcessor(
+    stepsArray,
+    isLoading,
+    processStep,
+    startDevServer
   );
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const init = async () => {
     try {
       if (!webContainer) return;
       await webContainer.mount(props.project?.files);
-      console.log('npm install');
-      const npmInstallPromise = runCommand('npm', ['install']);
+      const start = Date.now();
+      await runCommand('npm', ['ci']);
+      const end = Date.now();
+      console.log(`npm install took ${(end - start) / 1000} seconds`);
       setProjectSetupComplete(true);
 
       if (!(props?.messages?.length > 1)) {
-        console.log('Starting chat');
-        await startChat([
-          { role: PromptRole.User, content: props.project.prompt },
-        ]);
+        submit([{ role: PromptRole.User, content: props.project.prompt }]);
+      } else {
+        startDevServer();
       }
-
-      setIsGenerating(true);
-      npmInstallPromise
-        .then(() => {
-          console.log('npm install completed, starting dev server');
-          setIsGenerating(false);
-          return startDevServer();
-        })
-        .catch((error) => {
-          console.error('Error during npm install:', error);
-          setIsGenerating(false);
-        });
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -108,7 +199,7 @@ export default function Project(props: IChatProps) {
   };
 
   useEffect(() => {
-    if (webContainer) {
+    if (webContainer && !projectSetupComplete) {
       init();
     }
   }, [webContainer]);
@@ -133,102 +224,6 @@ export default function Project(props: IChatProps) {
     //   return;
     // }
     // setMessages((prev) => [...prev, data?.[0]]);
-  };
-
-  useEffect(() => {
-    const processSteps = async () => {
-      if (isProcessing || pendingSteps.length === 0) {
-        return;
-      }
-
-      setIsProcessing(true);
-      try {
-        // Filter out steps we've already processed
-        const newSteps = pendingSteps.filter((step) => {
-          const stepId = `${step.action}-${step.path}`;
-          return !processedStepIds.has(stepId);
-        });
-
-        if (newSteps.length === 0) {
-          setPendingSteps([]);
-          return;
-        }
-
-        console.log(`Processing ${newSteps.length} steps`);
-        await processLLMSteps(newSteps);
-
-        // Update processed steps
-        const updatedProcessedIds = new Set(processedStepIds);
-        newSteps.forEach((step) => {
-          const stepId = `${step.action}-${step.path}`;
-          updatedProcessedIds.add(stepId);
-        });
-
-        setProcessedStepIds(updatedProcessedIds);
-        setPendingSteps([]); // Clear pending steps after processing
-      } finally {
-        setIsProcessing(false);
-      }
-    };
-
-    processSteps();
-  }, [pendingSteps, processedStepIds, isProcessing]);
-
-  const startChat = async (newLlmPrompts: LLMPrompt[]) => {
-    try {
-      if (isGenerating) return;
-      setIsGenerating(true);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const accessToken = session?.access_token;
-
-      const response = await apiClient.post(
-        '/api/chat',
-        {
-          messages: newLlmPrompts,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          responseType: 'stream',
-          adapter: 'fetch',
-        }
-      );
-
-      const reader = response.data.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        try {
-          const chunk = decoder.decode(value, { stream: true });
-          const allSteps = JSON.parse(chunk);
-
-          // Add all steps to pending - our useEffect will handle filtering
-          setPendingSteps(allSteps);
-        } catch (error) {
-          console.error('Error parsing update:', error);
-        }
-      }
-
-      // await startDevServer();
-
-      // await saveMessageToDB('assistant', data?.steps);
-      // if (data?.success && data?.steps?.length > 0) {
-      //   await applyLLMSteps(data?.steps);
-      // }
-
-      setIsGenerating(false);
-    } catch (error: any) {
-      setIsGenerating(false);
-      alert(`Error: ${error.message}`);
-    }
   };
 
   const updateFileTree = (
@@ -270,82 +265,10 @@ export default function Project(props: IChatProps) {
     return { ...tree };
   };
 
-  async function processLLMSteps(steps: IStep[]) {
-    if (!webContainer) return;
-
-    // Helper function to update the FileSystemTree recursively
-
-    // Process each step
-    for await (const step of steps) {
-      try {
-        console.log(`step: ${step.action} ${step.path}`);
-        // Ensure /src exists in the WebContainer filesystem
-        await webContainer.fs.mkdir('/src', { recursive: true });
-
-        switch (step.action) {
-          case 'create': {
-            setSelectedFile({ content: step.content || '', path: step.path });
-            const pathParts = step.path.split('/').filter(Boolean);
-            const dirPath = pathParts.slice(0, -1).join('/');
-            if (dirPath) {
-              await webContainer.fs.mkdir(dirPath, { recursive: true });
-            }
-            if (!step.content) {
-              throw new Error(
-                `Content is required for creating file at ${step.path}`
-              );
-            }
-            await webContainer.fs.writeFile(step.path, step.content, 'utf8');
-            setFiles((prev) =>
-              updateFileTree(prev, step.path, 'create', step.content)
-            );
-            break;
-          }
-          case 'update': {
-            if (!step.content) {
-              throw new Error(
-                `Content is required for updating file at ${step.path}`
-              );
-            }
-            setSelectedFile({ content: step.content || '', path: step.path });
-            await webContainer.fs.writeFile(step.path, step.content, 'utf8');
-            setFiles((prev) =>
-              updateFileTree(prev, step.path, 'update', step.content)
-            );
-            break;
-          }
-          case 'delete': {
-            await webContainer.fs.rm(step.path, {
-              recursive: true,
-              force: true,
-            });
-            setFiles((prev) => updateFileTree(prev, step.path, 'delete'));
-            break;
-          }
-          case 'run': {
-            const [command, ...args] = step.path.split(' ');
-            await runCommand(command, args);
-            // No file tree update needed for 'run'
-            break;
-          }
-          default:
-            throw new Error(`Unknown action: ${step.action}`);
-        }
-        console.log(`compeleted: step: ${step.action} ${step.path}`);
-      } catch (error) {
-        console.error(
-          `Error processing step ${step.action} at ${step.path}:`,
-          error
-        );
-        // Optionally break the loop or continue based on your error handling policy
-      }
-    }
-  }
-
   const handleSendMessage = async (newValue: String) => {
     try {
       if (isGenerating) return;
-      setIsGenerating(true);
+      // setIsGenerating(true);
       const newLlmPrompt = [
         {
           role: PromptRole.User,
@@ -354,8 +277,8 @@ export default function Project(props: IChatProps) {
       ];
       // setInputValue('');
       await saveMessageToDB('user', newValue);
-      setIsGenerating(false);
-      startChat(newLlmPrompt);
+      // setIsGenerating(false);
+      submit(newLlmPrompt);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
@@ -400,31 +323,6 @@ export default function Project(props: IChatProps) {
       setActiveTab('code');
     }
   }, [isGenerating]);
-
-  // useEffect(() => {
-  //   const debouncedUpdateFiles = debounce(async () => {
-  //     return; // remove this later
-  //     const { error } = await supabase
-  //       .from('projects')
-  //       .update({
-  //         files,
-  //         updated_at: new Date().toISOString(),
-  //       })
-  //       .eq('id', props.project.id);
-
-  //     if (error) {
-  //       alert(`Error while saving files`);
-  //     }
-  //   }, 1000); // 1 second delay
-
-  //   if (files !== props.project?.files) {
-  //     debouncedUpdateFiles();
-  //   }
-
-  //   return () => {
-  //     debouncedUpdateFiles.cancel();
-  //   };
-  // }, [files, props.project?.id]);
 
   return (
     <div className="flex flex-col h-screen relative min-h-800">
