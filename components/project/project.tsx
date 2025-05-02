@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react';
 import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
 import Editor from '@/components/project/editor';
-import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
+import {
+  DirectoryNode,
+  FileSystemTree,
+  WebContainerProcess,
+} from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { ShineBorder } from '@/components/magicui/shine-border';
 import { TChatMessage, TProject } from '@/types/project';
-import { IStep } from '@/types/steps';
+import { IStep, LoadingStep } from '@/types/steps';
 import ChatPanel from './chat-panel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
@@ -20,6 +24,10 @@ import { stepsSchema } from '@/lib/utils/steps';
 import { z } from 'zod';
 import { useStepsProcessor } from '@/hooks/useStepsProcessor';
 import { useSaveFiles } from '@/hooks/file';
+import { Confetti } from '@/src/components/magicui/confetti';
+import confetti from 'canvas-confetti';
+import { Button } from '../ui/button';
+import { showConfetti } from '@/lib/utils/confiti';
 
 interface LLMPrompt {
   role: PromptRole;
@@ -58,6 +66,8 @@ export default function Project(props: IChatProps) {
     null
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
+  const [devServerProcess, setDevServerProcess] =
+    useState<WebContainerProcess>(null);
   const [customLoading, setIsGenerating] = useState(false);
   const [projectSetupComplete, setProjectSetupComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
@@ -68,6 +78,7 @@ export default function Project(props: IChatProps) {
     command: '',
     output: [],
   });
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([]);
 
   const {
     object: stepsArray,
@@ -88,7 +99,15 @@ export default function Project(props: IChatProps) {
     if (!webContainer) return;
 
     console.log(`Processing step: ${step.action} ${step.path}`);
-
+    setLoadingSteps((prev) => [
+      ...prev,
+      {
+        id: `${step.action}${step.path}`,
+        path: step.path?.split('/')?.pop() || '',
+        action: step.action,
+        status: 'loading',
+      },
+    ]);
     switch (step.action) {
       case 'create': {
         setSelectedFile({ content: step.content || '', path: step.path });
@@ -165,7 +184,11 @@ export default function Project(props: IChatProps) {
       default:
         throw new Error(`Unknown action: ${step.action}`);
     }
-
+    setLoadingSteps((prev) =>
+      prev?.map((s) =>
+        s.id === `${step.action}${step.path}` ? { ...s, status: 'success' } : s
+      )
+    );
     console.log(`Completed step: ${step.action} ${step.path}`);
   };
 
@@ -295,16 +318,37 @@ export default function Project(props: IChatProps) {
       setTerminalOutput((prev) => ({
         ...prev,
         command: 'npm run dev',
+        output: [...prev.output, '> npm run dev'],
       }));
       setShowTerminal(true);
       const spawnProcess = await webContainer.spawn('npm', ['run', 'dev']);
+      setDevServerProcess(spawnProcess);
+
+      let buffer = '';
       spawnProcess.output.pipeTo(
         new WritableStream({
           write(data) {
+            buffer += data;
+
+            const lines = buffer.split('\n');
+
+            buffer = lines.pop() || '';
+
             setTerminalOutput((prev) => ({
               ...prev,
-              output: [...prev.output, data],
+              output: [
+                ...prev.output,
+                ...lines?.filter((line) => line !== '\r'),
+              ],
             }));
+          },
+          close() {
+            if (buffer) {
+              setTerminalOutput((prev) => ({
+                ...prev,
+                output: [...prev.output, buffer],
+              }));
+            }
           },
         })
       );
@@ -314,6 +358,9 @@ export default function Project(props: IChatProps) {
         setUrl(url);
         setShowTerminal(false);
         setActiveTab('preview');
+        setTimeout(() => {
+          showConfetti();
+        }, 6000);
       });
     }
   }
@@ -331,7 +378,6 @@ export default function Project(props: IChatProps) {
           <ProjectLoadingSkeleton />
         </div>
       )}
-      {/* Header */}
       <ChatHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -353,6 +399,7 @@ export default function Project(props: IChatProps) {
             messages={messages}
             onSendMessage={handleSendMessage}
             isGenerating={isGenerating}
+            loadingSteps={loadingSteps}
           />
         </div>
 
@@ -366,12 +413,20 @@ export default function Project(props: IChatProps) {
             {isGenerating && (
               <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
             )}
-            {/* Code Editor or Preview */}
-            {activeTab === 'preview' ? (
-              <BrowserPreview url={url} />
-            ) : (
-              <>
-                <div className="flex h-full w-full">
+            <>
+              <div
+                className={`absolute w-full h-full ${
+                  activeTab === 'preview' ? 'block' : 'hidden'
+                }`}
+              >
+                <BrowserPreview url={url} />
+              </div>
+              <div
+                className={`w-full h-full flex flex-col ${
+                  activeTab === 'preview' ? 'hidden' : 'block'
+                }`}
+              >
+                <div className="flex flex-1 overflow-hidden">
                   <div
                     className={`${
                       selectedFile?.path ? 'hidden md:block' : ''
@@ -402,13 +457,15 @@ export default function Project(props: IChatProps) {
                     updateFileTree={updateFileTree}
                   />
                 </div>
-                <EditorTerminal
-                  showTerminal={showTerminal}
-                  setShowTerminal={setShowTerminal}
-                  terminalOutput={terminalOutput}
-                />
-              </>
-            )}
+                <div className="flex flex-col">
+                  <EditorTerminal
+                    showTerminal={showTerminal}
+                    setShowTerminal={setShowTerminal}
+                    terminalOutput={terminalOutput}
+                  />
+                </div>
+              </div>
+            </>
           </div>
         </div>
       </div>

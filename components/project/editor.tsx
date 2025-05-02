@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { cn } from '@/lib/utils';
 import { SelectedFileInfo } from './project';
 import { FileSystemTree } from '@webcontainer/api';
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { Button } from '../ui/button';
 
 interface EditorProps {
@@ -112,7 +112,16 @@ export default function Editor({
     <div className="flex-1 overflow-hidden bg-muted/80">
       {selectedFile && (
         <div className="flex items-center pl-4 text-xs border-b py-0 bg-muted/30 justify-between">
-          <span>{selectedFile.path}</span>
+          <div className="flex items-center">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setSelectedFile(null)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span>{selectedFile.path}</span>
+          </div>
           <Button
             size="icon"
             variant="ghost"

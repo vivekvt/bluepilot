@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Paperclip,
   Loader2,
+  CircleCheck,
+  Loader,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TChatMessage, TProject } from '@/types/project';
@@ -16,6 +18,7 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { appConfig } from '@/lib/config';
 import { ShineBorder } from '../magicui/shine-border';
+import { LoadingStep } from '@/types/steps';
 
 interface ChatPanelProps {
   messages: TChatMessage[];
@@ -23,6 +26,7 @@ interface ChatPanelProps {
   isGenerating?: boolean;
   className?: string;
   project: TProject;
+  loadingSteps: LoadingStep[];
 }
 
 export default function ChatPanel({
@@ -31,6 +35,7 @@ export default function ChatPanel({
   isGenerating = false,
   className,
   project,
+  loadingSteps,
 }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -179,6 +184,25 @@ export default function ChatPanel({
                 </span>
               </div>
             </div>
+            {loadingSteps?.map((step) => (
+              <div className="flex items-center justify-between rounded-md border p-2">
+                <div className="flex items-center gap-2">
+                  {step.action === 'run' ? (
+                    <Terminal size={16} />
+                  ) : (
+                    <FileCode size={16} />
+                  )}
+                  <span className="text-xs font-mono text-gray-300">
+                    {step.path}
+                  </span>
+                </div>
+                {step.status === 'success' ? (
+                  <CircleCheck className="text-green-400" size={16} />
+                ) : (
+                  <Loader className="text-yellow-400 animate-spin" size={16} />
+                )}
+              </div>
+            ))}
           </motion.div>
         )}
 
