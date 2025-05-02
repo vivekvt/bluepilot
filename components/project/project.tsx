@@ -21,7 +21,7 @@ import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import ProjectLoadingSkeleton from './project-loading-skeleton';
 import { stepsSchema } from '@/lib/utils/steps';
-import { z } from 'zod';
+import { set, z } from 'zod';
 import { useStepsProcessor } from '@/hooks/useStepsProcessor';
 import { useSaveFiles } from '@/hooks/file';
 import { Confetti } from '@/src/components/magicui/confetti';
@@ -97,8 +97,7 @@ export default function Project(props: IChatProps) {
   // Function to process a single step
   const processStep = async (step: IStep) => {
     if (!webContainer) return;
-
-    console.log(`Processing step: ${step.action} ${step.path}`);
+    setIsGenerating(true);
     setLoadingSteps((prev) => [
       ...prev,
       {
@@ -189,7 +188,7 @@ export default function Project(props: IChatProps) {
         s.id === `${step.action}${step.path}` ? { ...s, status: 'success' } : s
       )
     );
-    console.log(`Completed step: ${step.action} ${step.path}`);
+    setIsGenerating(false);
   };
 
   // Use our custom hook to process steps
