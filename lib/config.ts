@@ -1,4 +1,4 @@
-const websiteUrl = 'https://wwww.bluepilot.tech';
+const websiteUrl = 'https://www.bluepilot.tech';
 
 export const appConfig = {
   title: 'Blue Pilot',

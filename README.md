@@ -125,7 +125,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-- Website: [https://wwww.bluepilot.tech](https://wwww.bluepilot.tech)
+- Website: [https://www.bluepilot.tech](https://www.bluepilot.tech)
 - Twitter: [@bluepilot\_](https://x.com/bluepilot_)
 
 ---
