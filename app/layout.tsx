@@ -7,7 +7,7 @@ import { getUser } from '@/lib/supabase/helper';
 import { AuthProvider } from '@/context/AuthContext';
 import JsonLd from '@/lib/utils/jsonLd';
 
-export const metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(appConfig.url),
   title: {
     default: appConfig.title,
@@ -24,7 +24,7 @@ export const metadata = {
     address: false,
   },
   openGraph: {
-    type: appConfig.type,
+    type: 'website',
     title: appConfig.title,
     description: appConfig.description,
     siteName: appConfig.title,
@@ -77,7 +77,7 @@ export const metadata = {
     ],
   },
   manifest: '/site.webmanifest',
-  themeColor: appConfig.themeColor,
+  // themeColor: appConfig.themeColor,
 };
 
 export default async function RootLayout({

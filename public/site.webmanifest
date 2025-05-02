@@ -1,6 +1,7 @@
 {
   "name": "Blue Pilot",
   "short_name": "Blue Pilot",
+  "description": "AI Powered Website Builder",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +14,8 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "start_url": "/",
+  "theme_color": "#09090B",
+  "background_color": "#09090B",
   "display": "standalone"
 }
