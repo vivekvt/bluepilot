@@ -22,13 +22,3 @@ export type TChatMessage = {
   created_at: string;
   text: string;
 };
-
-export type TFile = {
-  id: string;
-  project_id: string;
-  path: string; // e.g. "src/App.tsx"
-  content: string | null; // null for directories
-  is_directory: boolean;
-  created_at: string;
-  updated_at: string;
-};

@@ -28,16 +28,24 @@ import { Confetti } from '@/src/components/magicui/confetti';
 import confetti from 'canvas-confetti';
 import { Button } from '../ui/button';
 import { showConfetti } from '@/lib/utils/confiti';
+import { convertFilesToString } from '@/lib/utils/fileTree';
+import { IPromptInput, PromptRole } from '@/types/message';
 
-interface LLMPrompt {
-  role: PromptRole;
-  content: string;
-}
+const enhancedPrompt = (userPrompt: string) => `
+Based on the current project setup, create a fully functional, modern, and well-designed web application that reflects the following idea:
 
-enum PromptRole {
-  User = 'user',
-  Assistant = 'assistant',
-}
+"${userPrompt}"
+
+Use elegant layout, Tailwind CSS styling, Lucide icons where appropriate, and consider UX best practices throughout.
+`;
+
+const enhanceFollowupPrompt = (userPrompt: string) => `
+Please update the existing project to reflect the following change or improvement:
+
+"${userPrompt}"
+
+Ensure consistency with the current design, use Tailwind CSS, and apply clean, accessible React component patterns.
+`;
 
 // For selected file state
 export interface SelectedFileInfo {
@@ -67,7 +75,7 @@ export default function Project(props: IChatProps) {
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
   const [devServerProcess, setDevServerProcess] =
-    useState<WebContainerProcess>(null);
+    useState<WebContainerProcess | null>(null);
   const [customLoading, setIsGenerating] = useState(false);
   const [projectSetupComplete, setProjectSetupComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
@@ -93,6 +101,17 @@ export default function Project(props: IChatProps) {
   // useSaveFiles(files, props.project);
 
   const isGenerating = isLoading || customLoading;
+
+  const sendMessage = async (newUserMessage: IPromptInput) => {
+    const fileClone = JSON.parse(JSON.stringify(files));
+    delete fileClone['package-lock.json'];
+    const filesString = convertFilesToString(fileClone);
+    const newMessages = [
+      { role: PromptRole.USER, content: filesString },
+      newUserMessage,
+    ];
+    submit(newMessages);
+  };
 
   // Function to process a single step
   const processStep = async (step: IStep) => {
@@ -147,36 +166,27 @@ export default function Project(props: IChatProps) {
         break;
       }
       case 'run': {
+        const [command, ...args] = step.path.split(' ');
+        await runCommand(command, args);
         const packageJsonContent = await webContainer.fs.readFile(
           'package.json',
           'utf8'
         );
-        console.log('packageJsonContent', packageJsonContent);
-        const [command, ...args] = step.path.split(' ');
-        await runCommand(command, args);
-
-        const packageJsonContent2 = await webContainer.fs.readFile(
-          'package.json',
+        setFiles((prev) =>
+          updateFileTree(prev, 'package.json', 'update', packageJsonContent)
+        );
+        const packageLockJsonContent = await webContainer.fs.readFile(
+          'package-lock.json',
           'utf8'
         );
-        console.log('packageJsonContent2', packageJsonContent2);
         setFiles((prev) =>
-          updateFileTree(prev, 'package.json', 'update', 'packageJsonContent')
+          updateFileTree(
+            prev,
+            'package-lock.json',
+            'update',
+            packageLockJsonContent
+          )
         );
-        console.log(files);
-
-        // const packageLockContent = await webContainer.fs.readFile(
-        //   'package-lock.json',
-        //   'utf8'
-        // );
-        // setFiles((prev) =>
-        //   updateFileTree(
-        //     prev,
-        //     'package-lock.json',
-        //     'update',
-        //     packageLockContent
-        //   )
-        // );
 
         break;
       }
@@ -210,7 +220,11 @@ export default function Project(props: IChatProps) {
       setProjectSetupComplete(true);
 
       if (!(props?.messages?.length > 1)) {
-        submit([{ role: PromptRole.User, content: props.project.prompt }]);
+        sendMessage({
+          role: PromptRole.USER,
+          content: enhancedPrompt(props.project.prompt),
+          // content: props.project.prompt,
+        });
       } else {
         startDevServer();
       }
@@ -254,19 +268,46 @@ export default function Project(props: IChatProps) {
     action: string,
     content?: string
   ): FileSystemTree => {
+    // Create a deep copy of the tree to avoid mutation
+    const newTree = JSON.parse(JSON.stringify(tree));
+
     const pathParts = path.split('/').filter(Boolean); // Split and remove empty parts
-    let current: FileSystemTree = { ...tree };
+
+    // Handle root-level file
+    if (pathParts.length === 1) {
+      const fileName = pathParts[0];
+
+      if (action === 'create' || action === 'update') {
+        if (content !== undefined) {
+          newTree[fileName] = { file: { contents: content } };
+        }
+      } else if (action === 'delete') {
+        delete newTree[fileName];
+      }
+
+      return newTree;
+    }
+
+    // For nested files/directories
+    let current = newTree;
+    const lastIndex = pathParts.length - 1;
 
     // Traverse or create nested directories
-    for (let i = 0; i < pathParts.length - 1; i++) {
+    for (let i = 0; i < lastIndex; i++) {
       const part = pathParts[i];
-      if (!current[part] || !('directory' in current[part])) {
+
+      // Create directory if it doesn't exist
+      if (!current[part]) {
+        current[part] = { directory: {} };
+      } else if (!('directory' in current[part])) {
+        // If it exists but isn't a directory, convert it to a directory
         current[part] = { directory: {} };
       }
+
       current = (current[part] as DirectoryNode).directory;
     }
 
-    const fileName = pathParts[pathParts.length - 1];
+    const fileName = pathParts[lastIndex];
 
     // Apply the action
     switch (action) {
@@ -279,28 +320,24 @@ export default function Project(props: IChatProps) {
       case 'delete':
         delete current[fileName];
         break;
-      default:
-        // 'run' doesn't affect the file tree, so no changes
-        break;
+      // 'run' doesn't affect the file tree
     }
 
-    return { ...tree };
+    return newTree;
   };
 
   const handleSendMessage = async (newValue: String) => {
     try {
       if (isGenerating) return;
       // setIsGenerating(true);
-      const newLlmPrompt = [
-        {
-          role: PromptRole.User,
-          content: inputValue,
-        },
-      ];
+      const newLlmPrompt = {
+        role: PromptRole.USER,
+        content: enhanceFollowupPrompt(inputValue),
+      };
       // setInputValue('');
-      await saveMessageToDB('user', newValue);
+      // await saveMessageToDB('user', newValue);
       // setIsGenerating(false);
-      submit(newLlmPrompt);
+      sendMessage(newLlmPrompt);
     } catch (error: any) {
       setIsGenerating(false);
       alert(`Error: ${error.message}`);
