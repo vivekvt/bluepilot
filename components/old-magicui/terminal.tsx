@@ -98,7 +98,12 @@ interface TerminalProps {
 
 export const Terminal = ({ children, className }: TerminalProps) => {
   return (
-    <div className={cn('z-0 h-full w-full bg-background', className)}>
+    <div
+      className={cn(
+        'z-0 h-full w-full border-t bg-muted overflow-scroll',
+        className
+      )}
+    >
       {/* <div className="flex flex-col gap-y-2 border-b border-border p-4">
         <div className="flex flex-row gap-x-2">
           <div className="h-2 w-2 rounded-full bg-red-500"></div>

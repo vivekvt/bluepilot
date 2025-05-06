@@ -78,8 +78,8 @@ export default async function Page({ searchParams }: any) {
   return (
     <div className="pb-5">
       <Navbar />
-      <div className="container">
-        <Breadcrumb className="mb-3">
+      <div className="mx-auto px-4 max-w-screen-xl">
+        <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -95,7 +95,7 @@ export default async function Page({ searchParams }: any) {
           {projects.map((project) => (
             <Card className="p-0 bg-muted/20" key={project?.id}>
               <Link href={`/projects/${project?.id}`} prefetch={false}>
-                <CardContent className="p-3 pl-4 pb-2">
+                <CardContent className="pt-5 px-4 pb-0">
                   <Sparkles />
                   <p className="text-md">{project?.title}</p>
                   <p className="text-sm text-muted-foreground">

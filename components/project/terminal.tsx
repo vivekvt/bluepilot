@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { TerminalSquare } from 'lucide-react';
-import { Terminal, TypingAnimation } from '../magicui/terminal';
+import { Terminal } from '../magicui/terminal';
 import { TerminalOutput } from './project';
 import { cn } from '@/lib/utils';
 import AnsiToHtml from 'ansi-to-html';
@@ -41,9 +41,8 @@ export default function EditorTerminal({
       </Tabs>
 
       {showTerminal && (
-        <Terminal className="h-40 w-full overflow-auto bg-black text-white p-3 font-mono text-sm">
-          {terminalOutput.command && <div>{'> ' + terminalOutput.command}</div>}
-
+        <Terminal className="h-40 w-full overflow-auto bg-black text-white font-mono text-sm">
+          {/* {terminalOutput.command && <div>{'> ' + terminalOutput.command}</div>} */}
           {terminalOutput.output.map((line, index) => (
             <div key={index}>
               <span

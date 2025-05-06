@@ -21,10 +21,9 @@ import { BrowserPreview } from './browser-preview';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import ProjectLoadingSkeleton from './project-loading-skeleton';
 import { stepsSchema } from '@/lib/utils/steps';
-import { set, z } from 'zod';
+import { z } from 'zod';
 import { useStepsProcessor } from '@/hooks/useStepsProcessor';
-import { useSaveFiles } from '@/hooks/file';
-import { Button } from '../ui/button';
+// import { useSaveFiles } from '@/hooks/file';
 import { showConfetti } from '@/lib/utils/confiti';
 import { convertFilesToString } from '@/lib/utils/fileTree';
 import { IPromptInput, PromptRole } from '@/types/message';
@@ -440,7 +439,7 @@ export default function Project(props: IChatProps) {
   }, [isGenerating]);
 
   return (
-    <div className="flex flex-col h-screen relative min-h-800">
+    <div className="relative flex flex-col h-screen">
       {!projectSetupComplete && (
         <div className="fixed top-0 left-0 w-full z-50 bg-background">
           <ProjectLoadingSkeleton />

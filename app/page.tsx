@@ -13,16 +13,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { appConfig } from '@/lib/config';
 import { NeonGradientCard } from '@/components/magicui/neon-gradient-card';
 import { AnimatedGridPattern } from '@/components/magicui/animated-grid-pattern';
 import Navbar from '@/components/navbar';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-import { AuroraText } from '@/src/components/magicui/aurora-text';
-import { AnimatedShinyText } from '@/src/components/magicui/animated-shiny-text';
-import { createClient } from '@/lib/supabase/client';
+import { AuroraText } from '@/components/magicui/aurora-text';
+import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text';
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -57,7 +55,7 @@ export default function LandingPage() {
   return (
     <div className="relative">
       <Navbar />
-      <main className="relative h-[calc(100vh-64px)] min-h-[400px] flex-1 flex flex-col items-center justify-center container max-w-5xl">
+      <main className="relative h-[calc(100vh-64px)] min-h-96 flex-1 flex flex-col items-center justify-center mx-auto max-w-5xl px-4">
         <AnimatedGridPattern
           numSquares={0}
           maxOpacity={0.1}
@@ -65,7 +63,7 @@ export default function LandingPage() {
           repeatDelay={1}
           className={cn(
             '[mask-image:radial-gradient(350px_circle_at_center,white,transparent)] opacity-60',
-            'inset-x-0 nh-[100%]'
+            'inset-x-0 h-full'
           )}
         />
         <a
@@ -95,7 +93,6 @@ export default function LandingPage() {
         </div>
 
         <div className="w-full max-w-2xl">
-          {/* <div className="rounded-2xl -translate-x-1 translate-y-1 bg-gradient-to-br from-pink-500 via-cyan-500 to-violet-500 p-0.5"> */}
           <NeonGradientCard>
             <div className="p-3 bg-background rounded-2xl">
               <textarea
@@ -125,10 +122,9 @@ export default function LandingPage() {
               </Button>
             </div>
           </NeonGradientCard>
-          {/* </div> */}
         </div>
       </main>
-      <section className="container py-12">
+      <section className="mx-auto px-4 py-12 max-w-screen-xl">
         <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-8">
           {[
             {
@@ -171,7 +167,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="py-8">
-        <div className="container mx-auto px-4">
+        <div className="mx-auto px-4 max-w-screen-xl">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="text-sm text-muted-foreground mb-4 md:mb-0">
               © 2025 {appConfig?.title}. All rights reserved.

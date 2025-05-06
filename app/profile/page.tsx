@@ -78,8 +78,8 @@ export default async function ProfilePage() {
   return (
     <div className="">
       <Navbar />
-      <div className="container pb-8">
-        <Breadcrumb className="mb-3">
+      <div className="mx-auto px-4 max-w-screen-xl pb-8">
+        <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
         </Breadcrumb>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="bg-muted/20 overflow-hidden border-2">
+          <Card className="bg-muted/20 overflow-hidden border-2 p-0">
             <div className="bg-gradient-to-r from-primary/30 to-primary/10 p-6">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20 border-4 border-background shadow-xl">
