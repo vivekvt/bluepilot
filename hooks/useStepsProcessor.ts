@@ -1,21 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 
+const DEFAULT_PROCESSING_STATE = {
+  processed: 0,
+  total: 0,
+  isProcessing: false,
+  hasCompleted: false,
+  errors: [],
+};
+
+interface ProcessingState {
+  processed: number;
+  total: number;
+  isProcessing: boolean;
+  hasCompleted: boolean;
+  errors: any[];
+}
+
 export function useStepsProcessor(
   steps: any,
   isLoading: boolean,
   processStep: any,
   onComplete: any
 ) {
-  const [processingState, setProcessingState] = useState({
-    processed: 0,
-    total: 0,
-    isProcessing: false,
-    hasCompleted: false,
-    errors: [],
-  });
+  const [processingState, setProcessingState] = useState<ProcessingState>(
+    DEFAULT_PROCESSING_STATE
+  );
 
   // Store the callback in a ref to avoid dependency changes
   const onCompleteRef = useRef(onComplete);
+
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -88,5 +101,27 @@ export function useStepsProcessor(
     }
   }, [steps, isLoading, processingState, processStep]);
 
+  // useEffect(() => {
+  //   console.log({ steps, isLoading });
+  // }, [steps, isLoading]);
+
+  // useEffect(() => {
+  //   // steps get reset to empty array, reset processing state
+  //   if (!steps && steps === undefined && isLoading) {
+  //     console.log('resetting processing state', steps);
+  //     setProcessingState(DEFAULT_PROCESSING_STATE);
+  //   } else {
+  //     console.log('steps', steps);
+  //   }
+  // }, [steps]);
+
   return processingState;
 }
+
+// useEffect(() => {
+//   // steps get reset to empty array, reset processing state
+//   if (!steps && steps === undefined) {
+//     console.log('resetting processing state', steps);
+//     setProcessingState(DEFAULT_PROCESSING_STATE);
+//   }
+// }, [steps]);

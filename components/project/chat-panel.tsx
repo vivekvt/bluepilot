@@ -51,7 +51,7 @@ export default function ChatPanel({
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, loadingSteps]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -101,7 +101,6 @@ export default function ChatPanel({
             >
               {/* Message Content */}
               <div className="flex-1 space-y-1">
-                {/* Timestamp */}
                 <div className="text-xs text-gray-500 flex items-center gap-2">
                   {message.role === 'user' ? 'You' : appConfig?.title}
                 </div>
@@ -156,6 +155,49 @@ export default function ChatPanel({
           ))}
         </AnimatePresence>
 
+        {loadingSteps?.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {loadingSteps?.map((step, index) => (
+              <div
+                key={index}
+                className={`flex items-center justify-between ${
+                  step?.action === 'explain' ? '' : 'rounded-md border p-2'
+                } mr-5 p-2`}
+              >
+                <div className="flex items-center gap-2">
+                  {step?.action !== 'explain' && (
+                    <>
+                      {step.action === 'run' ? (
+                        <Terminal size={16} />
+                      ) : (
+                        <FileCode size={16} />
+                      )}
+                    </>
+                  )}
+                  <span
+                    className={`text-${
+                      step?.action === 'explain' ? 'sm' : 'xs'
+                    } font-mono text-gray-300`}
+                  >
+                    {step.path}
+                  </span>
+                </div>
+                {step?.action !== 'explain' && (
+                  <>
+                    {step.status === 'success' ? (
+                      <CircleCheck className="text-green-400" size={16} />
+                    ) : (
+                      <Loader
+                        className="text-yellow-400 animate-spin"
+                        size={16}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         {/* Loading indicator */}
         {(isGenerating || loading) && (
           <motion.div
@@ -184,25 +226,6 @@ export default function ChatPanel({
                 </span>
               </div>
             </div>
-            {loadingSteps?.map((step) => (
-              <div className="flex items-center justify-between rounded-md border p-2">
-                <div className="flex items-center gap-2">
-                  {step.action === 'run' ? (
-                    <Terminal size={16} />
-                  ) : (
-                    <FileCode size={16} />
-                  )}
-                  <span className="text-xs font-mono text-gray-300">
-                    {step.path}
-                  </span>
-                </div>
-                {step.status === 'success' ? (
-                  <CircleCheck className="text-green-400" size={16} />
-                ) : (
-                  <Loader className="text-yellow-400 animate-spin" size={16} />
-                )}
-              </div>
-            ))}
           </motion.div>
         )}
 

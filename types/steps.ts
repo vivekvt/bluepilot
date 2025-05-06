@@ -1,4 +1,5 @@
 export enum IStepAction {
+  Explain = 'explain',
   Create = 'create',
   Update = 'update',
   Delete = 'delete',

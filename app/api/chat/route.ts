@@ -1,11 +1,20 @@
 import { streamObject } from 'ai';
 import { google } from '@ai-sdk/google';
-import { z } from 'zod';
+import { anthropic } from '@ai-sdk/anthropic';
 import { PromptRole } from '@/types/message';
 import { withAuth } from '@/lib/with-auth';
 import { stepsSchema } from '@/lib/utils/steps';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-const googleModel = google('gemini-2.0-flash');
+const googleModel = google('gemini-2.5-flash-preview-04-17');
+const claudeModel = anthropic('claude-3-5');
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
+// const claudeModel = anthropic('claude-3-7-sonnet-20250219');
+const openrouterClaude = openrouter('anthropic/claude-3.5-sonnet');
+const openrouterGooglePro = openrouter('google/gemini-2.5-pro-preview-03-25');
+// const openrouterDeepseek = openrouter('deepseek/deepseek-chat-v3-0324');
 
 export const POST = withAuth(async (req: Request) => {
   const messages = await req.json();
@@ -14,6 +23,7 @@ export const POST = withAuth(async (req: Request) => {
 
   const result = streamObject({
     model: googleModel,
+    // model: openrouterClaude, // googleModel,
     output: 'array',
     system: bluepilotSystemPrompt,
     schema: stepsSchema,
@@ -27,11 +37,11 @@ const bluepilotSystemPrompt = `You are BluePilot, an elite AI assistant and worl
 
 ### Instructions:
 - **Project Context**: Use the provided list of project files and their contents as the baseline. This is a React Vite starter template with TypeScript, Tailwind CSS, ESLint, and Lucide React for icons.
-- **Output Format**: Return a JSON array of objects, where each object is a step. Steps are ordered by their position in the array (first step is index 0). Each step must follow this schema:
+- **Output Format**: Return a JSON array of objects, where each object is a step. Steps are ordered by their position in the array (first step is index 0).(First step should be always action="explain" and only one "explain") Each step must follow this schema:
   {
-    "action": "create" | "update" | "delete" | "run", // The action to perform
-    "path": string, // File path (e.g., "/src/App.tsx") for create/update/delete, or command (e.g., "npm install", "npm install nanoid", "npm run dev") for run
-    "content": string | "", // File content for create/update; omitted for delete/run
+    "action": "explain" | "create" | "update" | "delete" | "run", // The action to perform
+    "path": string, // File path (e.g., "/src/App.tsx") for create/update/delete, or command (e.g., "npm install", "npm install nanoid", "npm run dev") for run; omitted for explain
+    "content": string | "", // File content for create/update; Short Explanation for explain; omitted for delete/run
   }
 
 ### Design Excellence:
@@ -59,6 +69,7 @@ const bluepilotSystemPrompt = `You are BluePilot, an elite AI assistant and worl
 
 ### Implementation Rules:
 - **Action Execution**:
+  - "explain": Short explanation/plan for all the steps.
   - "create": Create a file (with "content").
   - "update": Update a file's content.
   - "delete": Delete a file.

@@ -12,7 +12,7 @@ import {
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { ShineBorder } from '@/components/magicui/shine-border';
 import { TChatMessage, TProject } from '@/types/project';
-import { IStep, LoadingStep } from '@/types/steps';
+import { IStep, IStepAction, LoadingStep } from '@/types/steps';
 import ChatPanel from './chat-panel';
 import FileTree from './file-tree';
 import ChatHeader from './chat-header';
@@ -24,8 +24,6 @@ import { stepsSchema } from '@/lib/utils/steps';
 import { set, z } from 'zod';
 import { useStepsProcessor } from '@/hooks/useStepsProcessor';
 import { useSaveFiles } from '@/hooks/file';
-import { Confetti } from '@/src/components/magicui/confetti';
-import confetti from 'canvas-confetti';
 import { Button } from '../ui/button';
 import { showConfetti } from '@/lib/utils/confiti';
 import { convertFilesToString } from '@/lib/utils/fileTree';
@@ -103,6 +101,7 @@ export default function Project(props: IChatProps) {
   const isGenerating = isLoading || customLoading;
 
   const sendMessage = async (newUserMessage: IPromptInput) => {
+    setLoadingSteps([]);
     const fileClone = JSON.parse(JSON.stringify(files));
     delete fileClone['package-lock.json'];
     const filesString = convertFilesToString(fileClone);
@@ -116,6 +115,18 @@ export default function Project(props: IChatProps) {
   // Function to process a single step
   const processStep = async (step: IStep) => {
     if (!webContainer) return;
+    if (step.action === IStepAction.Explain) {
+      setLoadingSteps((prev) => [
+        ...prev,
+        {
+          id: `explain`,
+          path: step.content || '',
+          action: step.action,
+          status: 'success',
+        },
+      ]);
+      return;
+    }
     setIsGenerating(true);
     setLoadingSteps((prev) => [
       ...prev,
@@ -337,6 +348,7 @@ export default function Project(props: IChatProps) {
       // setInputValue('');
       // await saveMessageToDB('user', newValue);
       // setIsGenerating(false);
+      console.log('Sending followup message:', newLlmPrompt);
       sendMessage(newLlmPrompt);
     } catch (error: any) {
       setIsGenerating(false);
@@ -351,6 +363,16 @@ export default function Project(props: IChatProps) {
       setActiveTab('preview');
     } else {
       setIsGenerating(true);
+
+      setLoadingSteps((prev) => [
+        ...prev,
+        {
+          id: 'devServer',
+          path: 'npm run dev',
+          action: IStepAction.Run,
+          status: 'loading',
+        },
+      ]);
       setTerminalOutput((prev) => ({
         ...prev,
         command: 'npm run dev',
@@ -393,9 +415,19 @@ export default function Project(props: IChatProps) {
         setIsGenerating(false);
         setUrl(url);
         setShowTerminal(false);
+        setLoadingSteps((prev) =>
+          prev?.map((s) =>
+            s.id === `devServer` ? { ...s, status: 'success' } : s
+          )
+        );
         setActiveTab('preview');
         setTimeout(() => {
-          showConfetti();
+          if (terminalOutput?.output?.includes('Error')) {
+            alert('Error: Please check the terminal output for details.');
+            return;
+          } else {
+            showConfetti();
+          }
         }, 6000);
       });
     }
