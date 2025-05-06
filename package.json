@@ -25,6 +25,7 @@
     "@radix-ui/react-tooltip": "^1.2.6",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
+    "@vercel/analytics": "^1.5.0",
     "@webcontainer/api": "^1.6.1",
     "ai": "^4.3.13",
     "ansi-to-html": "^0.7.2",

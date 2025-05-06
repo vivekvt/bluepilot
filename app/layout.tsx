@@ -6,6 +6,7 @@ import { appConfig } from '@/lib/config';
 import { getUser } from '@/lib/supabase/helper';
 import { AuthProvider } from '@/context/AuthContext';
 import JsonLd from '@/lib/utils/jsonLd';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
   metadataBase: new URL(appConfig.url),
@@ -100,6 +101,7 @@ export default async function RootLayout({
         >
           <AuthProvider initialUser={user}>{children}</AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
