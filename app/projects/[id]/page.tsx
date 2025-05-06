@@ -10,6 +10,8 @@ import { FileQuestion } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export async function getProjectWithFiles(projectId: string): Promise<{
   project: TProject;
   messages: TChatMessage[];

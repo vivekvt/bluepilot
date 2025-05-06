@@ -23,10 +23,11 @@ import ProjectLoadingSkeleton from './project-loading-skeleton';
 import { stepsSchema } from '@/lib/utils/steps';
 import { z } from 'zod';
 import { useStepsProcessor } from '@/hooks/useStepsProcessor';
-// import { useSaveFiles } from '@/hooks/file';
 import { showConfetti } from '@/lib/utils/confiti';
 import { convertFilesToString } from '@/lib/utils/fileTree';
 import { IPromptInput, PromptRole } from '@/types/message';
+import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { saveFiles } from '@/hooks/file';
 
 const enhancedPrompt = (userPrompt: string) => `
 Based on the current project setup, create a fully functional, modern, and well-designed web application that reflects the following idea:
@@ -216,7 +217,9 @@ export default function Project(props: IChatProps) {
     stepsArray,
     isLoading,
     processStep,
-    startDevServer
+    async () => {
+      await startDevServer(saveMessageToDB);
+    }
   );
 
   const init = async () => {
@@ -251,25 +254,26 @@ export default function Project(props: IChatProps) {
   }, [webContainer]);
 
   const saveMessageToDB = async (
-    role: 'user' | 'assistant',
+    role: PromptRole.USER | PromptRole.ASSISTANT,
     content: string | any
   ) => {
-    // const { error: messageError, data } = await supabase
-    //   .from('messages')
-    //   .insert([
-    //     {
-    //       project_id: props?.project.id,
-    //       role,
-    //       text: role === 'user' ? content : '',
-    //       content: role === 'assistant' ? content : null,
-    //     },
-    //   ])
-    //   .select();
-    // if (messageError || !data?.[0]) {
-    //   alert(`Error while saving message:`);
-    //   return;
-    // }
-    // setMessages((prev) => [...prev, data?.[0]]);
+    const { error: messageError, data } = await supabaseBrowserClient
+      .from('messages')
+      .insert([
+        {
+          project_id: props?.project.id,
+          role,
+          text: role === PromptRole.USER ? content : '',
+          content: role === PromptRole.ASSISTANT ? content : null,
+        },
+      ])
+      .select();
+    if (messageError || !data?.[0]) {
+      alert(`Error while saving message:`);
+      return;
+    }
+    setMessages((prev) => [...prev, data?.[0]]);
+    saveFiles(files, props?.project.id);
   };
 
   const updateFileTree = (
@@ -355,10 +359,15 @@ export default function Project(props: IChatProps) {
     }
   };
 
-  async function startDevServer() {
+  async function startDevServer(
+    onSuccess?: (role: PromptRole, content: LoadingStep[]) => Promise<void>
+  ) {
     if (!webContainer) return;
     if (url) {
       setShowTerminal(false);
+      if (onSuccess) {
+        await onSuccess(PromptRole.ASSISTANT, loadingSteps);
+      }
       setActiveTab('preview');
     } else {
       setIsGenerating(true);
@@ -379,7 +388,7 @@ export default function Project(props: IChatProps) {
       }));
       setShowTerminal(true);
       const spawnProcess = await webContainer.spawn('npm', ['run', 'dev']);
-      setDevServerProcess(spawnProcess);
+      // setDevServerProcess(spawnProcess);
 
       let buffer = '';
       spawnProcess.output.pipeTo(
@@ -411,7 +420,6 @@ export default function Project(props: IChatProps) {
       );
       // Wait for `server-ready` event
       webContainer.on('server-ready', (port, url) => {
-        setIsGenerating(false);
         setUrl(url);
         setShowTerminal(false);
         setLoadingSteps((prev) =>
@@ -420,6 +428,10 @@ export default function Project(props: IChatProps) {
           )
         );
         setActiveTab('preview');
+        if (onSuccess) {
+          onSuccess(PromptRole.ASSISTANT, loadingSteps);
+        }
+        setIsGenerating(false);
         setTimeout(() => {
           if (terminalOutput?.output?.includes('Error')) {
             alert('Error: Please check the terminal output for details.');

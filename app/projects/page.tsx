@@ -5,7 +5,7 @@ import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { TProject } from '@/types/project';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -92,6 +92,14 @@ export default async function Page({ searchParams }: any) {
         </Breadcrumb>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="p-0 bg-muted/20 flex items-center justify-center">
+            <Link href={`/`} className="w-full h-full">
+              <CardContent className="p-0 py-2 w-full h-full flex-1 flex items-center justify-center gap-2">
+                <Plus className="h-5 w-5" />
+                <p className="text-md">New Project</p>
+              </CardContent>
+            </Link>
+          </Card>
           {projects.map((project) => (
             <Card className="p-0 bg-muted/20" key={project?.id}>
               <Link href={`/projects/${project?.id}`} prefetch={false}>
