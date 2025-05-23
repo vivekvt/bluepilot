@@ -1,29 +1,32 @@
 import { streamObject } from 'ai';
 import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
-import { PromptRole } from '@/types/message';
+import { IPromptInput, PromptRole } from '@/types/message';
 import { withAuth } from '@/lib/with-auth';
 import { stepsSchema } from '@/lib/utils/steps';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 const googleModel = google('gemini-2.5-flash-preview-04-17');
-const claudeModel = anthropic('claude-3-5');
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const claudeModel = anthropic('claude-3-7-sonnet-20250219');
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 // const claudeModel = anthropic('claude-3-7-sonnet-20250219');
-const openrouterClaude = openrouter('anthropic/claude-3.5-sonnet');
+const openrouterClaude37 = openrouter('anthropic/claude-3.7-sonnet');
+const openrouterClaude35 = openrouter('anthropic/claude-3.5-sonnet');
 const openrouterGooglePro = openrouter('google/gemini-2.5-pro-preview-03-25');
-// const openrouterDeepseek = openrouter('deepseek/deepseek-chat-v3-0324');
+const openrouterGoogle = openrouter('google/gemini-2.5-pro-preview');
+const openrouterOpenAi = openrouter('openai/gpt-4o-mini');
 
 export const POST = withAuth(async (req: Request) => {
   const messages = await req.json();
 
-  const allMessages: any = [...basePrompts, ...messages];
+  const allMessages: IPromptInput[] = [...basePrompts, ...messages];
 
   const result = streamObject({
     model: googleModel,
-    // model: openrouterClaude, // googleModel,
+    // model: openrouterOpenAi, // googleModel,
     output: 'array',
     system: bluepilotSystemPrompt,
     schema: stepsSchema,

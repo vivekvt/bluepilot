@@ -4,8 +4,15 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/with-auth';
 import { PromptRole } from '@/types/message';
 import { createClient } from '@/lib/supabase/server';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-const googleLiteModel = google('gemini-2.0-flash-lite');
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
+
+// const googleLiteModel = google('gemini-2.0-flash-lite');
+const googleModel = google('gemini-2.5-flash-preview-04-17');
+const openrouterClaude35 = openrouter('anthropic/claude-3.5-sonnet');
 
 export const POST = withAuth(async (request: Request) => {
   // Parse the request body
@@ -13,7 +20,7 @@ export const POST = withAuth(async (request: Request) => {
   const { prompt } = body;
 
   const { object } = await generateObject({
-    model: googleLiteModel,
+    model: openrouterClaude35, //googleModel,
     system: systemPrompt,
     schema: z.object({
       template: z

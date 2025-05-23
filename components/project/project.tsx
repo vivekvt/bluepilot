@@ -458,6 +458,7 @@ export default function Project(props: IChatProps) {
         </div>
       )}
       <ChatHeader
+        projectId={props.project.id}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         files={files}

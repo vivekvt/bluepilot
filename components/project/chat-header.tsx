@@ -1,4 +1,4 @@
-import { Code, Download, Eye, Loader, MessageSquare } from 'lucide-react';
+import { Code, Download, Eye, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { appConfig } from '@/lib/config';
 import { DeployButton } from './deploy-button';
@@ -13,6 +13,7 @@ interface ChatHeaderProps {
   setActiveTab: (tab: string) => void;
   isGenerating: boolean;
   files: FileSystemTree;
+  projectId: string;
 }
 
 export default function ChatHeader({
@@ -20,6 +21,7 @@ export default function ChatHeader({
   setActiveTab,
   isGenerating,
   files,
+  projectId,
 }: ChatHeaderProps) {
   const { onDownload } = useDownload();
 
@@ -68,7 +70,7 @@ export default function ChatHeader({
               >
                 <Download className="h-4 w-4" />
               </Button>
-              <DeployButton projectFiles={files} />
+              <DeployButton files={files} projectId={projectId} />
             </div>
           </div>
         </div>
