@@ -2,19 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
+import { CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { ShineBorder } from '@/components/magicui/shine-border';
 import { createClient } from '@/lib/supabase/client';
 import Navbar from '@/components/navbar';
 import { Provider } from '@supabase/supabase-js';
+import Footer from '@/components/footer';
+import { NeonGradientCard2 } from '@/components/magicui/neon-gradient-card2';
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState({
@@ -42,50 +36,51 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background relative">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <Card className="relative w-full max-w-sm mx-auto shadow-lg">
-          <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+      <div className="flex-1 flex items-center justify-center px-4 py-4 relative">
+        <NeonGradientCard2 className="relative w-full max-w-sm mx-auto">
+          <div className="flex flex-col gap-3">
+            <p className="text-2xl font-bold m-0 p-0">Welcome Back</p>
             <CardDescription>
               Sign in to your account to continue
             </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={() => handleSignIn('google')}
-              disabled={isLoading.github || isLoading.google}
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2 py-5"
-            >
-              {isLoading.google ? (
-                <Loader2 className="animate-spin w-5 h-5" />
-              ) : (
-                <GoogleIcon />
-              )}
-              {isLoading.google ? 'Connecting...' : 'Continue with Google'}
-            </Button>
-            <Button
-              onClick={() => handleSignIn('github')}
-              disabled={isLoading.github || isLoading.google}
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2 py-5"
-            >
-              {isLoading.github ? (
-                <Loader2 className="animate-spin w-5 h-5" />
-              ) : (
-                <GithubIcon />
-              )}
-              {isLoading.github ? 'Connecting...' : 'Continue with GitHub'}
-            </Button>
-          </CardContent>
-          <CardFooter className="justify-center text-sm text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </CardFooter>
-        </Card>
+            <div className="flex flex-col gap-3 my-2">
+              <Button
+                onClick={() => handleSignIn('google')}
+                disabled={isLoading.github || isLoading.google}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                {isLoading.google ? (
+                  <Loader2 className="animate-spin w-5 h-5" />
+                ) : (
+                  <GoogleIcon />
+                )}
+                {isLoading.google ? 'Connecting...' : 'Continue with Google'}
+              </Button>
+              <Button
+                onClick={() => handleSignIn('github')}
+                disabled={isLoading.github || isLoading.google}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                {isLoading.github ? (
+                  <Loader2 className="animate-spin w-5 h-5" />
+                ) : (
+                  <GithubIcon />
+                )}
+                {isLoading.github ? 'Connecting...' : 'Continue with GitHub'}
+              </Button>
+            </div>
+            <span className="justify-center text-xs text-muted-foreground">
+              By continuing, you agree to our Terms of Service and Privacy
+              Policy
+            </span>
+          </div>
+        </NeonGradientCard2>
       </div>
+      <Footer />
     </div>
   );
 }
