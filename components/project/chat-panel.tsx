@@ -20,6 +20,7 @@ import { appConfig } from '@/lib/config';
 import { ShineBorder } from '../magicui/shine-border';
 import { LoadingStep } from '@/types/steps';
 import { TextShimmer } from './shimmer-text';
+import { NeonGradientCard2 } from '../magicui/neon-gradient-card2';
 
 interface ChatPanelProps {
   messages: TChatMessage[];
@@ -139,48 +140,92 @@ export default function ChatPanel({
       </div>
 
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative rounded-lg border overflow-hidden">
-          {(isGenerating || loading) && (
-            <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
-          )}
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask ${appConfig?.title} anything...`}
-            className="min-h-[80px] resize-none py-3 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
-          />
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
-            <input
-              type="file"
-              ref={fileInputRef}
-              // onChange={handleFileChange}
-              className="hidden"
-              multiple
+        {isGenerating || loading ? (
+          <NeonGradientCard2 className="p-0">
+            <div>
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={`Ask ${appConfig?.title} anything...`}
+                className="min-h-[80px] resize-none py-3 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
+              />
+              <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  // onChange={handleFileChange}
+                  className="hidden"
+                  multiple
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  disabled
+                  onClick={handleFileClick}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isGenerating || loading || !input.trim()}
+                  className="h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors"
+                >
+                  {isGenerating || loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  ) : (
+                    <Send className="h-4 w-4 text-white" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </NeonGradientCard2>
+        ) : (
+          <div className="relative rounded-2xl border overflow-hidden">
+            {(isGenerating || loading) && (
+              <ShineBorder shineColor={['#A07CFE', '#FE8FB5', '#FFBE7B']} />
+            )}
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Ask ${appConfig?.title} anything...`}
+              className="min-h-[80px] resize-none py-3 focus-visible:ring-0 focus-visible:ring-offset-0 border-0"
             />
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full"
-              disabled
-              onClick={handleFileClick}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button
-              type="submit"
-              size="icon"
-              disabled={isGenerating || loading || !input.trim()}
-              className="h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors"
-            >
-              {isGenerating || loading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
-              ) : (
-                <Send className="h-4 w-4 text-white" />
-              )}
-            </Button>
+            <div className="absolute bottom-2 right-2 flex items-center gap-1">
+              <input
+                type="file"
+                ref={fileInputRef}
+                // onChange={handleFileChange}
+                className="hidden"
+                multiple
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 rounded-full"
+                disabled
+                onClick={handleFileClick}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isGenerating || loading || !input.trim()}
+                className="h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors"
+              >
+                {isGenerating || loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                ) : (
+                  <Send className="h-4 w-4 text-white" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </form>
     </div>
   );

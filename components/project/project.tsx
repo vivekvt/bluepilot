@@ -4,11 +4,7 @@ import { useEffect, useState } from 'react';
 import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { Code, Eye, Loader, MessageSquare } from 'lucide-react';
 import Editor from '@/components/project/editor';
-import {
-  DirectoryNode,
-  FileSystemTree,
-  WebContainerProcess,
-} from '@webcontainer/api';
+import { DirectoryNode, FileSystemTree } from '@webcontainer/api';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { ShineBorder } from '@/components/magicui/shine-border';
 import { TChatMessage, TProject } from '@/types/project';
@@ -72,8 +68,6 @@ export default function Project(props: IChatProps) {
     null
   );
   const [messages, setMessages] = useState<TChatMessage[]>(props.messages);
-  const [devServerProcess, setDevServerProcess] =
-    useState<WebContainerProcess | null>(null);
   const [customLoading, setIsGenerating] = useState(false);
   const [projectSetupComplete, setProjectSetupComplete] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
@@ -96,7 +90,6 @@ export default function Project(props: IChatProps) {
     api: '/api/chat',
     schema: z.array(stepsSchema),
   });
-  // useSaveFiles(files, props.project);
 
   const isGenerating = isLoading || customLoading;
 

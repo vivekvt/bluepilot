@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CpuArchitecture } from '../cpu';
 
 const ProjectLoadingSkeleton = () => {
   const [loadingText, setLoadingText] = useState('Setting up environment');
@@ -37,26 +38,27 @@ const ProjectLoadingSkeleton = () => {
     <div className="flex h-screen w-full p-4">
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <div className="inline-block relative w-16 h-16">
               <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          </div>
-          <h2 className="text-xl font-semibold text-blue-400 mb-2">
+          </div> */}
+          <CpuArchitecture text="Blue Pilot" />
+          <h2 className="text-lg font-semibold text-blue-400 mb-2">
             {loadingText}
-            <span className="text-blue-300">{dots}</span>
+            <span className="text-blue-400">{dots}</span>
           </h2>
-          <p className="text-gray-400 max-w-md">
+          <p className="text-gray-400 text-sm max-w-md">
             Preparing your development environment. This may take a moment.
           </p>
-          <div className="mt-6 w-64 mx-auto">
+          {/* <div className="mt-6 w-64 mx-auto">
             <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-500 rounded-full animate-pulse-subtle origin-left"
                 style={{ width: '60%' }}
               ></div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

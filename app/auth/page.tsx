@@ -40,7 +40,7 @@ export default function AuthPage() {
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4 py-4 relative">
         <NeonGradientCard2 className="relative w-full max-w-sm mx-auto">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 p-5">
             <p className="text-2xl font-bold m-0 p-0">Welcome Back</p>
             <CardDescription>
               Sign in to your account to continue
